@@ -78,3 +78,8 @@ Thumbs.db
 
 # Extracted embedding model (keep only .zip)
 00 - System/.agent/models/all-MiniLM-L6-v2/
+
+# FAISS index (regenerate on setup)
+00 - System/.agent/faiss_store/
+00 - System/.agent/index/faiss_index.bin
+00 - System/.agent/index/metadata.json

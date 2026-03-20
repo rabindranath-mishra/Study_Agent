@@ -1,0 +1,10 @@
+{
+  "id": "copilot-acp-agent",
+  "name": "Copilot ACP Agent",
+  "version": "0.4.38",
+  "minAppVersion": "1.1.7",
+  "description": "Runs GitHub Copilot CLI in ACP TCP mode and provides a right-side panel UI to chat and approve permissions.",
+  "author": "Rabindranath Mishra (generated)",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}

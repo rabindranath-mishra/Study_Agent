@@ -1,0 +1,7 @@
+/* Optional: Ensures the diagram stays centered in the PDF */
+@media print {
+    .mermaid {
+        display: flex;
+        justify-content: center;
+    }
+}

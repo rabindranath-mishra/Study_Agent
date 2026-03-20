@@ -1,0 +1,338 @@
+.copilot-acp-agent {
+  height: 100%;
+}
+
+.copilot-acp-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  padding: 8px;
+}
+
+.copilot-acp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.copilot-acp-title {
+  font-weight: 700;
+}
+
+.copilot-acp-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-acp-status {
+  opacity: 0.85;
+  font-size: 14px;
+}
+
+.copilot-acp-log {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--background-secondary);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+.copilot-acp-line {
+  margin: 0 0 6px 0;
+}
+
+.copilot-acp-system {
+  opacity: 0.85;
+}
+
+.copilot-acp-user {
+  font-weight: 800;
+}
+
+.copilot-acp-assistant {}
+
+.copilot-acp-inputrow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin: 0 0 30px 0;
+}
+
+.copilot-acp-input {
+  flex: 1;
+  resize: vertical;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}
+
+.copilot-acp-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-acp-permcard {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--background-primary);
+}
+
+.copilot-acp-permtitle {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.copilot-acp-permdetails {
+  opacity: 0.9;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.copilot-acp-permbuttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-acp-line,
+.copilot-acp-assistant,
+.copilot-acp-user,
+.copilot-acp-system {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+
+/* Permission header + type badges */
+.copilot-acp-permheader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.copilot-acp-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  letter-spacing: 0.6px;
+}
+
+.copilot-acp-badge-web {
+  background: var(--background-secondary);
+  border-color: var(--interactive-accent);
+}
+
+.copilot-acp-badge-vault {
+  background: var(--background-secondary);
+  border-color: var(--text-accent);
+}
+
+.copilot-acp-badge-file {
+  background: var(--background-secondary);
+  border-color: var(--color-yellow);
+}
+
+.copilot-acp-permtitle {
+  font-weight: 600;
+}
+
+.copilot-yellow {
+  color: #facc15;
+}
+
+/* Markdown-rendered assistant output */
+.copilot-acp-md {
+  white-space: normal;
+  user-select: text;
+}
+
+.copilot-acp-md pre {
+  white-space: pre;
+  overflow-x: auto;
+  user-select: text;
+}
+
+.copilot-acp-md code {
+  font-family: var(--font-monospace),
+    "Segoe UI Emoji", "Segoe UI Symbol",
+    "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla",
+    monospace;
+}
+
+
+/* ===== Improved Markdown Styling for ACP Terminal ===== */
+
+.copilot-acp-md {
+  white-space: normal;
+  line-height: 1.6;
+  user-select: text;
+}
+
+/* Headings */
+.copilot-acp-md h1,
+.copilot-acp-md h2,
+.copilot-acp-md h3,
+.copilot-acp-md h4 {
+  margin-top: 0.8em;
+  margin-bottom: 0.4em;
+}
+
+/* Lists */
+.copilot-acp-md ul,
+.copilot-acp-md ol {
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+
+/* Code blocks */
+.copilot-acp-md pre {
+  background: var(--background-secondary);
+  padding: 8px 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.copilot-acp-md code {
+  font-family: var(--font-monospace),
+    "Segoe UI Emoji", "Segoe UI Symbol",
+    "Apple Color Emoji", "Noto Color Emoji", monospace;
+  background: var(--background-secondary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Tables */
+.copilot-acp-md table {
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  width: 100%;
+  font-size: 12px;
+}
+
+.copilot-acp-md th,
+.copilot-acp-md td {
+  border: 1px solid var(--background-modifier-border);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.copilot-acp-md th {
+  background: var(--background-secondary);
+  font-weight: 600;
+}
+
+.copilot-acp-md tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Blockquotes */
+.copilot-acp-md blockquote {
+  border-left: 3px solid var(--interactive-accent);
+  padding-left: 8px;
+  margin-left: 0;
+  opacity: 0.85;
+}
+
+
+/* ===== Improved User Message Styling ===== */
+
+.copilot-acp-line.copilot-acp-user {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary-alt);
+  font-weight: 500;
+  position: relative;
+}
+
+.copilot-acp-line.copilot-acp-user::before {
+  content: "You";
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-right: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .copilot-acp-line.copilot-acp-user::before {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.copilot-acp-line.copilot-acp-user code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.theme-dark .copilot-acp-line.copilot-acp-user code {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+/* Predefined prompts dropdown */
+.copilot-acp-promptselect {
+  max-width: 220px;
+  margin-left: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+
+.copilot-acp-raw {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  opacity: 0.95;
+}
+
+
+.copilot-acp-iconbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.copilot-acp-iconbtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.copilot-acp-send-iconbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.copilot-acp-send-iconbtn svg {
+  width: 16px;
+  height: 16px;
+}

@@ -1,0 +1,38 @@
+/* Apply only when exporting/printing */
+@media print {
+
+  @page {
+    margin: 1in;
+  }
+
+  body {
+    font-family: "Calibri", sans-serif !important;
+    font-size: 10pt;
+    line-height: 1.6;
+    max-width: 6.5in;
+    margin: auto;
+  }
+
+  /* Headings */
+  h1 { font-size: 16pt; }
+  h2 { font-size: 14pt; }
+  h3 { font-size: 12pt; }
+
+  /* Images scale properly */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .mermaid {
+  	display: flex;
+  	justify-content: center;
+  }
+  
+  /* Code blocks */
+  pre, code {
+    font-family: Consolas, monospace;
+    font-size: 10pt;
+  }
+
+}

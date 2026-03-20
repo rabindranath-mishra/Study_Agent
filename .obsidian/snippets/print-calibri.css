@@ -1,0 +1,111 @@
+/* Try to make PDF export match the on-screen (UI) reading view */
+@media print {
+
+  /* Use theme variables so typography matches the UI */
+  :root, body {
+    font-family: var(--font-text, "Calibri", sans-serif) !important;
+    font-size: var(--font-text-size, 10px) !important;
+    line-height: var(--line-height-normal, 1) !important;
+    color: var(--text-normal) !important;
+    background: white !important; /* PDFs often ignore dark backgrounds badly */
+  }
+
+  /* Keep headings consistent with theme */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-text, "Calibri", sans-serif) !important;
+    color: var(--text-normal) !important;
+  }
+  
+  /* Headings */
+  h1 { font-size: 16pt; }
+  h2 { font-size: 14pt; }
+  h3 { font-size: 12pt; }
+
+  /* Make sure the content width/spacing matches reading view */
+  .markdown-preview-view,
+  .markdown-reading-view,
+  .cm-sizer,
+  .markdown-rendered {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: var(--file-line-width, 900px) !important;
+  }
+
+  /* Page setup */
+  @page { margin: 1in; }
+  
+  /* Images: keep on-screen scaling but prevent overflow */
+  img, svg, video {
+    max-width: 90% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Tables: prevent cutting off */
+  table {
+    width: 90% !important;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    vertical-align: top;
+  }
+  
+  .mermaid {
+  	display: flex;
+  	justify-content: center;
+  }
+
+  /* Code blocks: match UI but keep printable */
+  pre, code {
+    font-family: var(--font-monospace, Consolas, "Courier New", monospace) !important;
+    font-size: 0.9em !important;
+  }
+  pre {
+    white-space: pre-wrap !important;   /* wrap long lines */
+    word-break: break-word !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border: 1px solid #ddd;
+  }
+
+  /* Links: show URLs like many print styles do */
+  a {
+    color: var(--text-accent, #0b57d0) !important;
+    text-decoration: underline;
+  }
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+  }
+
+  /* Remove UI-only clutter if it appears */
+  .workspace,
+  .status-bar,
+  .titlebar,
+  .app-container,
+  .side-dock,
+  .mod-left-split,
+  .mod-right-split,
+  .view-header,
+  .popover,
+  .tooltip {
+    display: none !important;
+  }
+
+  /* Avoid weird page breaks */
+  h1, h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  p, blockquote, ul, ol {
+    orphans: 3;
+    widows: 3;
+  }
+}

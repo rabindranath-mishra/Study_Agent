@@ -1,0 +1,12 @@
+{
+  "copilotPath": "C:\\Users\\310121561\\AppData\\Roaming\\npm\\copilot.cmd",
+  "host": "localhost",
+  "port": 9001,
+  "vaultPath": "C:\\GitViews\\Obsidian_Study_Agent",
+  "openOnStartup": false,
+  "model": "claude-sonnet-4.5",
+  "showSystemLogs": false,
+  "extraCliArgs": "--yolo",
+  "promptPrefixText": "Start as an agent as per the instructions in",
+  "promptPresetsText": "research.agent.md\\nmaintenance.agent.md\\npresentation.agent.md"
+}

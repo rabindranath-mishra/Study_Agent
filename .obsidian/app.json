@@ -1,0 +1,14 @@
+{
+  "newFileLocation": "folder",
+  "newFileFolderPath": "01 - Inbox",
+  "readableLineLength": false,
+  "showLineNumber": false,
+  "pdfExportSettings": {
+    "pageSize": "A4",
+    "landscape": false,
+    "margin": "2",
+    "downscalePercent": 100
+  },
+  "defaultViewMode": "preview",
+  "attachmentFolderPath": "02 - Sources/Attachments"
+}

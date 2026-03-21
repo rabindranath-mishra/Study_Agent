@@ -5,6 +5,7 @@ tags:
   - architecture
   - system
   - c4
+type: system
 note_type: system
 generated_by: copilot
 ---
@@ -35,7 +36,7 @@ generated_by: copilot
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                       STUDY AGENT SYSTEM                            │
-│              (Obsidian vault + AI orchestration layer)              │
+│  (Obsidian vault + AI orchestration layer)              │
 └───────┬──────────────────────────────────────┬──────────────────────┘
         │                                      │
         │ queries / commands                   │ vault writes / reads
@@ -43,7 +44,7 @@ generated_by: copilot
 ┌───────────────────┐                 ┌────────────────────┐
 │   STUDENT         │                 │   OBSIDIAN VAULT   │
 │  (primary user)   │                 │  (markdown + YAML) │
-│                   │                 │  C:\GitViews\      │
+│                   │                 │  (vault root)      │
 │  Grade 9–12       │                 │   Study_Agent\     │
 │  Board: CBSE /    │                 └────────────────────┘
 │  ICSE / IB /      │

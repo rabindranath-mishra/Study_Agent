@@ -147,8 +147,11 @@ NEGATION_PATTERNS = [
     r"\bwithout\s+{kw}\b",
     r"\blacks?\s+{kw}\b",
     r"\bn/a\b",
-    r"\bremoved\b",
-    r"\bdiscontinued\b",
+    # Keyword-anchored: only flag when the keyword itself is near "removed/discontinued",
+    # not bare-word matches that fire on unrelated changelog text.
+    r"\b{kw}\b.{{0,40}}\bremoved\b",
+    r"\bremoved\b.{{0,40}}\b{kw}\b",
+    r"\b{kw}\b.{{0,40}}\bdiscontinued\b",
 ]
 
 NUMBER_RE = re.compile(r"(\d[\d,\.]*)\s*(gb|tb|mb|tflops|tops|ghz|mhz|w\b|cores?|bits?)?", re.IGNORECASE)
@@ -330,9 +333,7 @@ def main():
         "flag_count": len(flags),
     }
 
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    print(json.dumps(output, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(output, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
 
 
 if __name__ == "__main__":

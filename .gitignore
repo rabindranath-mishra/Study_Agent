@@ -3,6 +3,7 @@ venv/
 
 # Python cache
 __pycache__/
+.pytest_cache
 *.py[cod]
 *$py.class
 *.so
@@ -83,3 +84,10 @@ Thumbs.db
 00 - System/.agent/faiss_store/
 00 - System/.agent/index/faiss_index.bin
 00 - System/.agent/index/metadata.json
+
+# Runtime learner state (generated at runtime, contains student data)
+00 - System/.agent/state/
+
+# Obsidian workspace layout (machine-specific)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

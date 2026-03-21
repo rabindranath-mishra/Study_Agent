@@ -1,0 +1,128 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║           PLAN UPDATED - VERSION 4.0                          ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📋 BUILD PLAN UPDATED: Study Agent Build Plan v4.0
+
+🎯 KEY CHANGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ ARCHITECTURE SIMPLIFIED:
+   Using GitHub Copilot CLI instead of custom Python ACP server
+   
+   OLD: Plugin → Python ACP Server → Orchestrator → 9 Agents → Tools
+   NEW: Plugin → Copilot CLI → Python Tools (workflows)
+
+✅ PHASES UPDATED:
+   • Phase 11 (ACP Server): ❌ NOT NEEDED
+   • Phase 12 (Plugin): ✅ COMPLETE (copilot-acp-agent v0.4.38)
+   • Phase 10 (Orchestrator): ✅ HANDLED BY COPILOT CLI
+   • Phase 9 (Agents): 🔄 REFRAMED as Study Workflows
+
+✅ GAPS RESOLVED:
+   • G04 (Orchestrator): ✅ Using Copilot CLI orchestration
+   • G06 (ACP Server): ✅ Using Copilot CLI ACP TCP mode
+   • G07 (Plugin): ✅ Plugin built and installed
+   • G10 (Data Models): 🔶 Simplified (fewer models needed)
+
+═══════════════════════════════════════════════════════════════
+  📊 UPDATED PROGRESS
+═══════════════════════════════════════════════════════════════
+
+Phase 1 (Infrastructure):      ✅ ~85% Complete
+Phase 2 (Tool Fixes):          ✅ ~60% Complete
+Phase 3 (Data Models):         ⬜ 0% (Simplified scope)
+Phase 4 (Vault Operations):    ⬜ 0%
+Phase 5 (Templates):           ⬜ 0%
+Phase 6 (RAG Layer):           ⬜ 0%
+Phase 7 (Adapters):            ⬜ 0%
+Phase 8 (State Management):    ⬜ 0%
+Phase 9 (Study Workflows):     ⬜ 0% (Reframed from agents)
+Phase 10 (Integration):        ⬜ 0%
+Phase 11 (ACP Server):         ✅ N/A (Not needed)
+Phase 12 (Plugin):             ✅ 100% COMPLETE
+Phase 13 (Testing):            ⬜ Merged with Phase 10
+
+OVERALL: ~30% Complete (accounting for plugin & architecture simplification)
+
+═══════════════════════════════════════════════════════════════
+  🎯 REVISED PRIORITY LIST
+═══════════════════════════════════════════════════════════════
+
+IMMEDIATE (Complete Phase 2):
+   1. Fix create_note.py bugs (G18, G19, G20)
+   2. Rewrite classify_task.py for study domain
+   3. Fix archive_and_reset.py folder names
+   4. Strip branding from generate_presentation.py
+
+SHORT-TERM (Foundation):
+   5. Create data models (simplified scope)
+   6. Create 8 note templates (08 - Templates/)
+   7. Build state management stores
+
+MID-TERM (Core Functionality):
+   8. Build study workflows:
+      • teaching_workflow.py
+      • practice_workflow.py
+      • diagnostic_workflow.py
+      • revision_workflow.py
+      • review_workflow.py
+
+LONG-TERM (Integration):
+   9. End-to-end testing with Copilot CLI
+   10. Create learner dashboard
+   11. Optimize tool performance
+
+═══════════════════════════════════════════════════════════════
+  💡 WHAT THIS MEANS
+═══════════════════════════════════════════════════════════════
+
+✅ LESS WORK:
+   • No custom ACP server to build
+   • No custom orchestrator to build
+   • No TypeScript plugin development
+   • Simplified data model requirements
+
+✅ FASTER PATH TO MVP:
+   • Plugin already works
+   • Can test immediately with Copilot CLI
+   • Focus on study-specific logic only
+
+⚠️  DEPENDENCY:
+   • Requires GitHub Copilot CLI installed
+   • Must use Copilot CLI's tool calling conventions
+   • Orchestration logic in Copilot CLI (less control)
+
+📈 PROGRESS BOOST:
+   • From ~15% → ~30% complete
+   • Major infrastructure already done
+   • Can focus on study workflows
+
+═══════════════════════════════════════════════════════════════
+  🚀 NEXT IMMEDIATE ACTION
+═══════════════════════════════════════════════════════════════
+
+1. Test current setup:
+   copilot --acp --port 9000
+   
+2. Open Obsidian, enable plugin, try chat
+
+3. Fix the 4 pending tool issues
+
+4. Start building study workflows
+
+═══════════════════════════════════════════════════════════════
+
+📄 Plan document updated at:
+   06 - Plans/Study Agent Build Plan.md
+
+Changes:
+   • Architecture diagram updated
+   • Phases 9-13 rewritten
+   • Gap status updated
+   • Resume point updated
+   • Version bumped to 4.0
+
+╚═══════════════════════════════════════════════════════════════╝

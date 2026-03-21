@@ -79,9 +79,7 @@ def main():
             }
         })
 
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(out, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(out, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
 
 
 if __name__ == "__main__":

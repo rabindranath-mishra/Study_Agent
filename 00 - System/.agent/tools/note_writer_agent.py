@@ -190,9 +190,7 @@ def main():
             "compliance":  "PASS",
         },
     }
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    print(json.dumps(output, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(output, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
     sys.exit(0)
 
 

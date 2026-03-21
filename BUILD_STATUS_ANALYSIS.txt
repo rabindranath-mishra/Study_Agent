@@ -1,0 +1,314 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║          STUDY AGENT BUILD STATUS ANALYSIS                    ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📋 SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Phases: 13
+Completed Phases: ~2.5 (Phase 1 & 2 mostly done, Phase 3-13 pending)
+Tools Available: 14 Python files
+Tools Status: 10 working, 4 need fixes
+
+═══════════════════════════════════════════════════════════════
+  ✅ PHASE 1: INFRASTRUCTURE FIXES (Mostly Complete)
+═══════════════════════════════════════════════════════════════
+
+Status: ~85% Complete
+
+✅ COMPLETED:
+   [1.1] ✅ Model extracted (all-MiniLM-L6-v2)
+   [1.2] ✅ FAISS index rebuilt for correct vault
+   [1.3] ✅ contradiction_check.py fixed/working
+   [1.6] ✅ paths.py updated (STATE_DIR, LOGS_DIR)
+   [1.8] ✅ state/ directory created
+   [1.9] ✅ logs/ directory created
+
+⬜ PENDING:
+   [1.4] ⬜ Update setup_windows.ps1 (still says "Research Agent")
+   [1.5] ⬜ Create config.json (centralized configuration)
+   [1.7] ⬜ Redefine session log schema (study domain)
+
+═══════════════════════════════════════════════════════════════
+  ✅ PHASE 2: TOOL FIXES (Partially Complete)
+═══════════════════════════════════════════════════════════════
+
+Status: ~60% Complete
+
+✅ COMPLETED:
+   [2.4] ✅ index_vault.py - extracts frontmatter metadata
+   [2.5] ✅ query_vault.py - returns text field populated
+   [2.6] ✅ vault_search_agent.py - forwards metadata
+   [2.9] ✅ web_search_agent.py - study domain tiers
+   [2.10] ✅ create_note_stdin.ps1 - fixed args
+
+⬜ PENDING:
+   [2.1] ⬜ create_note.py - add 'type:' field (G18)
+   [2.2] ⬜ create_note.py - fix duplicate counter (G19)
+   [2.3] ⬜ create_note.py - fix slugify regex (G20)
+   [2.7] ⬜ classify_task.py - rewrite for study domain (G11)
+   [2.8] ⬜ archive_and_reset.py - update folder names (G12)
+   [2.11] ⬜ generate_presentation.py - strip Philips branding (G14)
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 3: DATA MODELS (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ PluginRequest model
+   ⬜ PluginResponse model
+   ⬜ VaultChunk model
+   ⬜ LearnerProfile model
+   ⬜ AgentRequest/Response models
+   ⬜ EvidenceBundle model
+
+Impact: CRITICAL - All subsequent phases depend on these
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 4: VAULT OPERATIONS (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ frontmatter_parser.py
+   ⬜ vault_reader.py
+   ⬜ vault_writer.py
+   ⬜ link_graph.py
+   ⬜ templates.py
+
+Current Workaround: Direct use of create_note.py
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 5: VAULT TEMPLATES (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete (08 - Templates/ is empty)
+
+Missing Templates:
+   ⬜ source-note.md
+   ⬜ topic-note.md
+   ⬜ concept-note.md
+   ⬜ practice-note.md
+   ⬜ review-note.md
+   ⬜ revision-plan.md
+   ⬜ exam-note.md
+   ⬜ dashboard-note.md
+
+Impact: HIGH - Agents cannot generate consistent notes
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 6: RAG LAYER (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ vault_retriever.py
+   ⬜ confidence_assessor.py
+   ⬜ evidence_merger.py
+   ⬜ knowledge_materializer.py
+   ⬜ retrieval_logger.py
+
+Current State: Tools exist but no abstraction layer
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 7: EXTERNAL RETRIEVAL (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ web_search_adapter.py
+   ⬜ external_router.py
+
+Current State: web_search_agent.py exists but not wrapped
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 8: STATE MANAGEMENT (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing State Stores:
+   ⬜ learner_profile_store.py
+   ⬜ mastery_store.py
+   ⬜ revision_queue_store.py
+   ⬜ exam_calendar_store.py
+   ⬜ activity_log_store.py
+
+Impact: CRITICAL - No persistence of learner state
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 9: SPECIALIST AGENTS (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete (0/9 agents built)
+
+Missing Agents:
+   ⬜ curriculum_agent.py
+   ⬜ knowledge_agent.py
+   ⬜ teaching_agent.py
+   ⬜ practice_agent.py
+   ⬜ diagnostic_agent.py
+   ⬜ revision_planner_agent.py
+   ⬜ memory_agent.py
+   ⬜ output_agent.py
+   ⬜ profile_agent.py
+
+Impact: CRITICAL - Core functionality missing
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 10: ORCHESTRATOR (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing:
+   ⬜ orchestrator_agent.py (was deleted, needs rebuild)
+   ⬜ Intent routing logic
+   ⬜ Multi-agent composition
+   ⬜ Response merging
+
+Impact: CRITICAL - No coordination between agents
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 11: ACP SERVER (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ adapter.py
+   ⬜ request_router.py
+   ⬜ response_formatter.py
+   ⬜ server.py
+   ⬜ main.py
+
+Impact: CRITICAL - Backend cannot receive requests
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 12: OBSIDIAN PLUGIN (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete
+
+Missing Components:
+   ⬜ Plugin source directory structure
+   ⬜ manifest.json, package.json
+   ⬜ TypeScript source files (main.ts, ChatView.ts, etc.)
+   ⬜ Build configuration
+   ⬜ Compiled main.js
+
+Impact: CRITICAL - No user interface
+
+═══════════════════════════════════════════════════════════════
+  ❌ PHASE 13: INTEGRATION (Not Started)
+═══════════════════════════════════════════════════════════════
+
+Status: 0% Complete (requires all previous phases)
+
+═══════════════════════════════════════════════════════════════
+  📊 AVAILABLE TOOLS BREAKDOWN
+═══════════════════════════════════════════════════════════════
+
+✅ WORKING TOOLS (10):
+   1. paths.py ✅ - Path constants
+   2. index_vault.py ✅ - FAISS indexer
+   3. query_vault.py ✅ - Semantic search
+   4. contradiction_check.py ✅ - Contradiction detector
+   5. vault_search_agent.py ✅ - Vault search wrapper
+   6. web_search_agent.py ✅ - Tavily web search
+   7. web_fetch.py ✅ - HTML fetcher
+   8. fact_checker_agent.py ✅ - Claim verifier
+   9. compliance_agent.py ✅ - Constitution checker
+   10. note_writer_agent.py ✅ - Gated vault writer
+
+⚠️ NEEDS FIXES (4):
+   1. create_note.py ⚠️ - Missing type field, broken counter, bad regex
+   2. classify_task.py ⚠️ - Research domain, not study domain
+   3. archive_and_reset.py ⚠️ - Wrong folder names
+   4. generate_presentation.py ⚠️ - Philips branding
+
+═══════════════════════════════════════════════════════════════
+  🎯 COMPLETION ANALYSIS
+═══════════════════════════════════════════════════════════════
+
+Phase Completion:
+   Phase 1 (Infrastructure): ~85% ✅
+   Phase 2 (Tool Fixes): ~60% ✅
+   Phase 3-13: 0% ⬜
+
+Overall System Completion: ~15%
+
+What Works:
+   ✅ FAISS semantic search
+   ✅ Web research integration
+   ✅ Fact checking
+   ✅ Constitution compliance checking
+   ✅ Basic note creation
+   ✅ Vault indexing
+
+What's Missing:
+   ❌ All 9 specialist agents
+   ❌ Orchestrator
+   ❌ ACP server (backend)
+   ❌ Obsidian plugin (frontend)
+   ❌ State management
+   ❌ Data models
+   ❌ Note templates
+   ❌ End-to-end integration
+
+═══════════════════════════════════════════════════════════════
+  🚀 IMMEDIATE NEXT STEPS (Based on Plan)
+═══════════════════════════════════════════════════════════════
+
+Priority 1 (Complete Phase 2):
+   1. Fix create_note.py (G18, G19, G20)
+   2. Rewrite classify_task.py for study domain (G11)
+   3. Fix archive_and_reset.py folder names (G12)
+   4. Strip branding from generate_presentation.py (G14)
+
+Priority 2 (Start Phase 3):
+   5. Create data models (PluginRequest, PluginResponse, etc.)
+
+Priority 3 (Phase 5 - Quick Win):
+   6. Create 8 note templates in 08 - Templates/
+
+Priority 4 (Phase 8 - Enables Testing):
+   7. Build state management stores
+
+Priority 5 (Phase 9 - Core Functionality):
+   8. Build 9 specialist agents
+
+═══════════════════════════════════════════════════════════════
+  💡 KEY INSIGHTS
+═══════════════════════════════════════════════════════════════
+
+1. FOUNDATION SOLID:
+   The tool layer (Phase 1-2) is mostly complete and working.
+   FAISS, web search, fact checking all functional.
+
+2. MISSING BUSINESS LOGIC:
+   No specialist agents = no study-specific functionality
+   System can index and search but cannot teach, practice, diagnose
+
+3. MISSING INTEGRATION:
+   Tools exist in isolation - no orchestrator to coordinate
+   No server to receive requests
+   No plugin for user interaction
+
+4. MISSING PERSISTENCE:
+   No state management = cannot track learner progress
+   No mastery tracking
+   No revision queue
+
+5. MISSING STRUCTURE:
+   No templates = inconsistent note generation
+   No data models = no contracts between components
+
+═══════════════════════════════════════════════════════════════
+

@@ -71,7 +71,7 @@ if __name__ == '__main__':
     url = sys.argv[1]
     try:
         out = fetch(url)
-        print(json.dumps(out, ensure_ascii=False, indent=2))
+        sys.stdout.buffer.write(json.dumps(out, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
     except Exception as e:
         print(json.dumps({'error': str(e), 'url': url}))
         sys.exit(1)

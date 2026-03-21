@@ -2,8 +2,8 @@
 type: revision-plan
 status: active
 created: 2026-03-08
-updated: 2026-03-08T17:36
-version: 3.0
+updated: 2026-03-20
+version: 4.0
 generated_by: copilot
 ---
 
@@ -13,7 +13,7 @@ generated_by: copilot
 
 ## ⏩ Resume Point — Last session ended here
 
-### ✅ Tool Layer Complete (Phases 1–2 mostly done)
+### ✅ Infrastructure Layer Complete (Phases 1–2 + UI)
 
 All core tools are audited, fixed, and tested end-to-end:
 
@@ -35,27 +35,57 @@ All core tools are audited, fixed, and tested end-to-end:
 | `archive_and_reset.py` | ❌ G12 — hardcoded research folder names |
 | `generate_presentation.py` | ❌ G14 — Philips branding to strip |
 
+### ✅ UI & Backend Integration Complete
+
+| Component | State |
+|---|---|
+| **Obsidian Plugin** | ✅ Built & Installed (v0.4.38) |
+| **ACP Backend** | ✅ Using GitHub Copilot CLI in ACP mode |
+| **Protocol** | ✅ ACP over TCP (port 9000) |
+
+**Architecture:** Plugin → ACP TCP → Copilot CLI → Python Tools → Vault
+
 ### 🔜 Next tasks in order
 
 1. **Fix `create_note.py`** (G18, G19, G20) — 3 small bugs, unblock note frontmatter correctness
 2. **Fix `classify_task.py`** (G11) — rewrite task types for study domain
 3. **Fix `archive_and_reset.py`** (G12) — update folder names to study structure
 4. **Strip branding from `generate_presentation.py`** (G14)
-5. **Phase 3: Data Models** — `PluginRequest`, `PluginResponse`, `VaultChunk`, `LearnerProfile`
+5. **Phase 3: Data Models** — `VaultChunk`, `LearnerProfile` (simplified for Copilot CLI integration)
 6. **Phase 4: Vault Operations** — `vault_reader.py`, `vault_writer.py`, `link_graph.py`
 7. **Phase 5: Vault Templates** — 8 note templates in `08 - Templates\`
 8. **Phase 6: RAG Layer** — `vault_retriever.py`, `confidence_assessor.py`, `evidence_merger.py`
-9. **Phase 8: State Management** — learner profile, mastery, queue, exam calendar stores
-10. **Phase 9: Specialist Agents** — 9 agents (Curriculum, Knowledge, Teaching, Practice, Diagnostic, Planner, Memory, Output, Profile)
-11. **Phase 10: Orchestrator** — intent routing, multi-agent composition
-12. **Phase 11: ACP Server** — HTTP server, request router, response formatter
-13. **Phase 12: Obsidian Plugin** — TypeScript plugin, chat UI, approval mediator
+9. **Phase 7: State Management** — learner profile, mastery, queue, exam calendar stores
+10. **Phase 8: Study Workflows** — Teaching, Practice, Diagnostic, Revision workflows as tool compositions
+11. **Phase 9: Integration & Testing** — End-to-end validation with Copilot CLI orchestration
 
 ---
 
 ## Problem Statement
 
-Build a Python-first, Obsidian-native, multi-agent learning system that helps students study, practice, revise, and prepare for exams. The system consists of three components: a Python ACP backend, an Obsidian plugin frontend, and the vault as the system of record.
+Build a Python-first, Obsidian-native, multi-agent learning system that helps students study, practice, revise, and prepare for exams. The system uses GitHub Copilot CLI as the ACP backend (orchestration layer), Python tools for vault operations and RAG, an Obsidian plugin frontend for chat UI, and the vault as the system of record.
+
+## ✅ Architecture Update (v4.0)
+
+**REVISED:** The system now leverages GitHub Copilot CLI's built-in ACP server and agent orchestration capabilities, simplifying the architecture:
+
+```
+[Obsidian Plugin] ✅ COMPLETE
+    ↓ ACP TCP (port 9000)
+[GitHub Copilot CLI] ✅ EXTERNAL
+    ↓ calls tools via subprocess
+[Python Tool Layer] ✅ MOSTLY COMPLETE
+    ↓ operates on
+[Vault + FAISS + Web] ✅ WORKING
+```
+
+**What this means:**
+- ✅ **Phase 11 (Custom ACP Server):** NOT NEEDED - Using Copilot CLI instead
+- ✅ **Phase 12 (Obsidian Plugin):** COMPLETE - copilot-acp-agent v0.4.38 installed
+- ✅ **Phase 10 (Orchestrator):** SIMPLIFIED - Copilot CLI handles orchestration
+- ✅ **Phase 9 (Specialist Agents):** REFRAMED - Study workflows as tool compositions, not separate Python agents
+
+The Python layer provides **domain-specific tools** that Copilot CLI orchestrates based on student queries.
 
 ---
 
@@ -121,13 +151,13 @@ These issues were identified by auditing all existing tools against the vault co
 | G01 | ✅ Fixed | FAISS index built from wrong vault (`ai_notes`) — re-indexed from correct vault | `faiss_store\` |
 | G02 | ✅ Fixed | Embedding model not extracted — `all-MiniLM-L6-v2\` directory does not exist | `models\` |
 | G03 | ✅ Fixed | `contradiction_check.py` had wrong CLI signature — passes `faiss_store`/`model_path` now removed | `vault_search_agent.py` |
-| G04 | 🔶 Partial | `fact_checker_agent.py`, `compliance_agent.py`, `note_writer_agent.py` rebuilt and tested ✅ — `orchestrator.py` and `session_logger.py` still missing | `orchestrator.py`, `session_logger.py` |
-| G05 | ⬜ Open | No study-domain agents exist — Teaching, Practice, Diagnostic, Curriculum, Planner, Memory, Output, Profile, Knowledge | `agents\` |
-| G06 | ⬜ Open | No ACP server — backend cannot receive requests from any frontend | `acp\` |
-| G07 | ⬜ Open | No Obsidian plugin — no student-facing interaction surface | `plugin\` |
-| G08 | ⬜ Open | No state management — no stores, no JSON files, `state\` directory does not exist | `state\` |
+| G04 | ✅ N/A | Orchestrator deleted → NOW HANDLED BY COPILOT CLI (no custom orchestrator needed) | N/A |
+| G05 | 🔶 Reframed | No study-domain agents exist → SIMPLIFIED: Study workflows as tool compositions called by Copilot CLI | `workflows\` |
+| G06 | ✅ N/A | No ACP server → USING GITHUB COPILOT CLI instead (no custom server needed) | N/A |
+| G07 | ✅ Complete | No Obsidian plugin → PLUGIN BUILT & INSTALLED (copilot-acp-agent v0.4.38) | `.obsidian\plugins\` |
+| G08 | ⬜ Open | No state management — no stores, no JSON files, `state\` directory exists but empty | `state\` |
 | G09 | ⬜ Open | No vault templates — `08 - Templates\` is empty, no note structure for agent output | `08 - Templates\` |
-| G10 | ⬜ Open | No data models — no shared dataclasses for PluginRequest, PluginResponse, VaultChunk, LearnerProfile, etc. | `models\` |
+| G10 | 🔶 Simplified | No data models — simplified due to Copilot CLI integration (fewer models needed) | `models\` |
 
 ### 🟠 High — Tool Exists But Wrong Domain or Broken Logic
 
@@ -157,27 +187,32 @@ These issues were identified by auditing all existing tools against the vault co
 
 ---
 
-## System Architecture
+## System Architecture (v4.0 - Copilot CLI Integration)
 
 ```mermaid
 flowchart TD
-    Plugin["Obsidian Plugin\nChat UI · Context Capture · Approval"]
-    ACP["ACP Server\nHTTP · Request Router · Response Formatter"]
-    Orch["Orchestrator Agent\nIntent · Routing · Composition"]
-    Agents["Specialist Agents × 9\nCurriculum · Knowledge · Teaching\nPractice · Diagnostic · Planner\nMemory · Output · Profile"]
-    Tools["Existing Tools\nclassify_task · vault_search_agent\nweb_search_agent · index_vault · create_note"]
-    State["State Stores\nLearner Profile · Mastery · Queue · Calendar · Logs"]
-    Vault["Vault — System of Record\nNotes · Templates · Artifacts · State JSON"]
+    Plugin["Obsidian Plugin ✅\ncopilot-acp-agent v0.4.38\nChat UI · Context Capture · Approval"]
+    Copilot["GitHub Copilot CLI ✅\nACP Server (port 9000)\nIntent · Routing · Orchestration"]
+    Tools["Python Tool Layer ✅\nclassify_task · vault_search_agent\nweb_search_agent · index_vault\ncreate_note · fact_checker"]
+    State["State Stores ⬜\nLearner Profile · Mastery\nQueue · Calendar · Logs"]
+    Vault["Vault — System of Record ✅\nNotes · Templates · Artifacts"]
+    FAISS["FAISS Index ✅\nSemantic Search"]
+    Web["Web Research ✅\nTavily API"]
 
-    Plugin <--> ACP
-    ACP <--> Orch
-    Orch <--> Agents
-    Agents --> Tools
-    Agents <--> State
+    Plugin <-- "ACP TCP" --> Copilot
+    Copilot -- "subprocess calls" --> Tools
+    Tools --> State
     Tools --> Vault
+    Tools --> FAISS
+    Tools --> Web
     State --> Vault
-    Agents --> Vault
 ```
+
+**Key Changes from Original Plan:**
+- ✅ Plugin → Copilot CLI (not custom Python server)
+- ✅ Copilot CLI handles orchestration (no custom orchestrator needed)
+- ✅ Python tools called as subprocesses by Copilot CLI
+- ⬜ Study workflows defined as tool compositions (not separate agent files)
 
 ---
 
@@ -289,78 +324,60 @@ All learner state as JSON files inside the vault boundary. Addresses G08, G22.
 
 ---
 
-## Phase 9: Specialist Agents
+## Phase 9: Study Workflows (Reframed)
 
-Nine specialist agents. Each owns one domain. Calls existing tools as subprocesses. Addresses G05.
+Build study-specific workflow tools that Copilot CLI can orchestrate. Each workflow is a Python tool that implements study logic.
 
-- [ ] **9.1** `[G05]` Create `agents\curriculum_agent.py` — subject structure, topic sequencing, prerequisites, syllabus alignment, exam relevance
-- [ ] **9.2** `[G05]` Create `agents\knowledge_agent.py` — query RAG layer, assess confidence, escalate to web via external_router, assemble `EvidenceBundle`
-- [ ] **9.3** `[G05]` Create `agents\teaching_agent.py` — generate explanations at appropriate level, stepwise content, Mermaid diagrams
-- [ ] **9.4** `[G05]` Create `agents\practice_agent.py` — generate drills, quizzes, flashcards, mock tests; adjust difficulty
-- [ ] **9.5** `[G05]` Create `agents\diagnostic_agent.py` — analyze answers, classify mistakes (conceptual vs. careless), identify prerequisite gaps
-- [ ] **9.6** `[G05]` Create `agents\revision_planner_agent.py` — daily and exam-countdown plans, prioritize by weakness and exam proximity
-- [ ] **9.7** `[G05]` Create `agents\memory_agent.py` — read/write state via stores, update mastery, maintain revision queue, preserve session continuity
-- [ ] **9.8** `[G05]` Create `agents\output_agent.py` — format study artifacts as markdown with frontmatter, apply templates, produce `ArtifactOperation` list
-- [ ] **9.9** `[G05]` Create `agents\profile_agent.py` — manage learner profile, onboard new students, update preferences and exam targets
+- [ ] **9.1** Create `workflows\teaching_workflow.py` — explain concepts at appropriate level, generate examples, create concept notes
+- [ ] **9.2** Create `workflows\practice_workflow.py` — generate quizzes/flashcards/drills, create practice notes
+- [ ] **9.3** Create `workflows\diagnostic_workflow.py` — analyze answers, identify mistakes, update mastery
+- [ ] **9.4** Create `workflows\revision_workflow.py` — create revision plans based on mastery and exam dates
+- [ ] **9.5** Create `workflows\review_workflow.py` — generate review summaries and progress reports
+
+**Note:** Copilot CLI orchestrates these workflows based on student queries. No separate agent files needed.
 
 ---
 
-## Phase 10: Orchestrator Agent
+## Phase 10: Integration & Testing (Combined with Phase 13)
 
-Rewrite of the deleted `orchestrator.py`, now study-domain aware. Addresses G04.
+End-to-end validation with actual Copilot CLI orchestration.
 
-- [ ] **10.1** `[G04]` Create `agents\orchestrator_agent.py` — interpret `PluginRequest.intent`, select workflow, invoke specialists, compose `PluginResponse`
-- [ ] **10.2** Implement intent-to-workflow routing: `explain` → Curriculum + Knowledge + Teaching; `practice` → Knowledge + Practice; `diagnose` → Diagnostic + Memory; `plan` → Memory + Planner; `review` → Knowledge + Output
-- [ ] **10.3** Implement agent result composition — merge multi-agent outputs into single `chat_reply` + `proposed_artifact_operations`
-- [ ] **10.4** Implement state update proposal — Memory Agent returns mastery/queue changes in `state_update_proposals`
-
----
-
-## Phase 11: ACP Server
-
-The HTTP service layer. Addresses G06.
-
-- [ ] **11.1** `[G06]` Create `acp\adapter.py` — parse HTTP request body into `PluginRequest`; serialize `PluginResponse` to JSON
-- [ ] **11.2** `[G06]` Create `acp\request_router.py` — validate request, dispatch to Orchestrator
-- [ ] **11.3** `[G06]` Create `acp\response_formatter.py` — structure Orchestrator output into complete `PluginResponse` JSON
-- [ ] **11.4** `[G06]` Create `acp\server.py` — HTTP server (stdlib `http.server`), `POST /request`, `GET /health`
-- [ ] **11.5** `[G06]` Create `main.py` — load config, extract model if needed, rebuild index if missing, init stores, start server, graceful shutdown
+- [ ] **10.1** Start Copilot CLI in ACP mode: `copilot --acp --port 9000`
+- [ ] **10.2** Enable plugin in Obsidian; confirm chat panel connects
+- [ ] **10.3** Test vault search: "what is photosynthesis" → retrieves from vault
+- [ ] **10.4** Test teaching workflow: "explain photosynthesis" → creates concept note
+- [ ] **10.5** Test practice workflow: "create quiz on photosynthesis" → generates quiz note
+- [ ] **10.6** Test diagnostic workflow: submit answers → updates mastery
+- [ ] **10.7** Test revision workflow: "plan for exam in 2 weeks" → creates revision plan
+- [ ] **10.8** Confirm all state files inside vault boundary
+- [ ] **10.9** Confirm all agent-created notes have `type` frontmatter and filename = H1
+- [ ] **10.10** Create initial learner dashboard note in `07 - Outputs\`
 
 ---
 
-## Phase 12: Obsidian Plugin
+## ~~Phase 11: ACP Server~~ (NOT NEEDED)
 
-The student-facing frontend. Addresses G07.
-
-- [ ] **12.1** `[G07]` Create plugin source directory at `00 - System\plugin\`
-- [ ] **12.2** `[G07]` Create `manifest.json` — id: `study-agent`, name, version, minimum Obsidian version
-- [ ] **12.3** `[G07]` Create `package.json` and `tsconfig.json`
-- [ ] **12.4** `[G07]` Create `esbuild.config.mjs`
-- [ ] **12.5** `[G07]` Implement `main.ts` — register views and commands, load settings
-- [ ] **12.6** `[G07]` Implement `ChatView.ts` — sidebar leaf with message list, input box, send button
-- [ ] **12.7** `[G07]` Implement `ContextCapture.ts` — extract current note path, frontmatter, selected text from active editor
-- [ ] **12.8** `[G07]` Implement `ACPClient.ts` — POST `PluginRequest` to backend, receive `PluginResponse`
-- [ ] **12.9** `[G07]` Implement `ArtifactPreview.ts` — modal showing proposed vault writes before approval
-- [ ] **12.10** `[G07]` Implement `ApprovalMediator.ts` — approve/reject each `ArtifactOperation`; apply approved writes via Obsidian vault API
-- [ ] **12.11** `[G07]` Implement `NextActionsBar.ts` — render `suggested_next_actions` as clickable buttons
-- [ ] **12.12** `[G07]` Implement `SettingsTab.ts` — backend URL, port, Tavily API key
-- [ ] **12.13** `[G07]` Run `npm run build` → produce `main.js`
-- [ ] **12.14** `[G07]` Copy built plugin to `.obsidian\plugins\study-agent\`
+✅ **Using GitHub Copilot CLI instead.** No custom Python ACP server required.
 
 ---
 
-## Phase 13: End-to-End Integration & Validation
+## ~~Phase 12: Obsidian Plugin~~ (COMPLETE)
 
-- [ ] **13.1** Start backend; confirm `GET /health` responds
-- [ ] **13.2** Enable plugin in Obsidian; confirm chat panel connects
-- [ ] **13.3** Validate explain workflow: student asks "explain photosynthesis" → Teaching agent → reply in chat
-- [ ] **13.4** Validate practice workflow: quiz request → Practice agent → approval dialog → note written to `05 - Practice\`
-- [ ] **13.5** Validate diagnostic workflow: student submits answers → Diagnostic agent grades → mastery updated in `subject-mastery.json`
-- [ ] **13.6** Validate revision plan workflow: plan request → Planner agent → note written to `06 - Plans\`
-- [ ] **13.7** Add sample notes to vault, rebuild FAISS index, confirm vault-first retrieval before any web call
-- [ ] **13.8** Confirm all state files inside vault boundary
-- [ ] **13.9** Confirm all agent-created notes have `type` frontmatter and filename = H1
-- [ ] **13.10** Create initial learner dashboard note in `07 - Outputs\`
+✅ **Plugin already built and installed:** copilot-acp-agent v0.4.38
+
+Files present:
+- `.obsidian/plugins/copilot-acp-agent/main.js` (40.4 KB)
+- `manifest.json`, `styles.css`, `data.json`, `README.md`
+
+Features:
+- Right-side panel with chat UI
+- ACP TCP connection to Copilot CLI
+- Permission approval dialog
+- Vault context passing
+
+---
+
+## ~~Phase 13: End-to-End Integration~~ (Merged with Phase 10)
 
 ---
 

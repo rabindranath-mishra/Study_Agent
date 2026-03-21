@@ -45,6 +45,9 @@ param(
 )
 
 process {
+    # Ensure PowerShell pipes Unicode strings as UTF-8 bytes (without BOM) to Python stdin
+    $OutputEncoding = New-Object System.Text.UTF8Encoding $false
+
     if ([string]::IsNullOrWhiteSpace($Content)) {
         $errorResult = @{
             success = $false

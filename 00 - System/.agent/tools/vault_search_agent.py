@@ -19,16 +19,19 @@ Output:
 import sys
 import json
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
 from paths import PYTHON_EXE
 TOOLS_DIR    = Path(__file__).parent
 
+_UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+
 
 def run_tool(cmd: list) -> dict:
     """Run a tool subprocess, return parsed JSON output."""
-    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", env=_UTF8_ENV)
     if result.returncode not in (0, 1):  # 1 = some tools use 1 for FAIL (not error)
         return {"error": result.stderr.strip() or f"Exit code {result.returncode}"}
     try:
@@ -102,9 +105,7 @@ def main():
         "contradiction_result": contradiction_result,
         "hit_count": len(vault_findings),
     }
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    print(json.dumps(output, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(output, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ SESSION_LOG = str(_AGENT_DIR / "logs" / "session_log.jsonl")
 PS_SCRIPT_CREATE_NOTE = str(_TOOLS_DIR / "create_note_stdin.ps1")
 
 # ── Vault folders ─────────────────────────────────────────────────────────────
-SYSTEM_DIR    = str(_VAULT_ROOT / "00 - System")
+SYSTEM_DIR    = str(_SYSTEM_DIR)                        # same as 00 - System/
 INBOX_DIR     = str(_VAULT_ROOT / "01 - Inbox")
 SOURCES_DIR   = str(_VAULT_ROOT / "02 - Sources")
 SUBJECTS_DIR  = str(_VAULT_ROOT / "03 - Subjects")

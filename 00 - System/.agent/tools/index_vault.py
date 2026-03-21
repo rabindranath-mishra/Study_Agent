@@ -167,8 +167,12 @@ def file_sha1(path: Path) -> str:
 
 
 def build_passages(vault_dir: str, chunk_size: int = 900, chunk_overlap: int = 150) -> List[Dict]:
+    # Named constants for magic numbers used in chunking
+    MIN_CHUNK_LENGTH = 20   # skip trivial chunks (e.g. bare "---" thematic breaks)
+
     vault = Path(vault_dir).expanduser().resolve()
     items: List[Dict] = []
+    skipped_files = 0
 
     for md in iter_markdown_files(vault):
         try:
@@ -177,13 +181,23 @@ def build_passages(vault_dir: str, chunk_size: int = 900, chunk_overlap: int = 1
             try:
                 raw = md.read_text(encoding="latin-1")
             except Exception:
-                print(f"[WARN] Could not read {md}, skipping.")
+                print(f"[WARN] Could not read {md}, skipping.", file=sys.stderr)
+                skipped_files += 1
                 continue
 
         frontmatter = parse_frontmatter(raw)
         text = strip_frontmatter(raw)
         sections = split_into_sections(text)
         sha = file_sha1(md)
+
+        # is_relative_to() added in Python 3.9; use try/except for safety
+        try:
+            rel_path = str(md.relative_to(vault)) if md.is_relative_to(vault) else str(md)
+        except AttributeError:
+            try:
+                rel_path = str(md.relative_to(vault))
+            except ValueError:
+                rel_path = str(md)
 
         for heading, sec_text in sections:
             sec_text = sec_text.strip()
@@ -194,13 +208,13 @@ def build_passages(vault_dir: str, chunk_size: int = 900, chunk_overlap: int = 1
 
             for chunk in chunk_text(sec_text, chunk_size=chunk_size, chunk_overlap=chunk_overlap):
                 normalized = normalize_whitespace(chunk)
-                if len(normalized) < 20:  # skip trivial chunks (e.g. bare "---" thematic breaks)
+                if len(normalized) < MIN_CHUNK_LENGTH:
                     continue
                 items.append({
                     "text": normalized,
                     "metadata": {
                         "file_path": str(md),
-                        "rel_path": str(md.relative_to(vault)) if md.is_relative_to(vault) else str(md),
+                        "rel_path":  rel_path,
                         "heading":   heading,
                         "block_id":  block_id,
                         "file_sha1": sha,
@@ -209,6 +223,9 @@ def build_passages(vault_dir: str, chunk_size: int = 900, chunk_overlap: int = 1
                         "topic":     frontmatter.get("topic", ""),
                     }
                 })
+
+    if skipped_files:
+        print(f"[WARN] Skipped {skipped_files} unreadable file(s) during indexing.", file=sys.stderr)
 
     return items
 

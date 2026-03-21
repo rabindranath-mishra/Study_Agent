@@ -10,6 +10,7 @@ State stored under: 00 - System/.agent/state/learner-profile.json
 """
 
 import json
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -150,7 +151,6 @@ def get_grade() -> str:
     current_level = profile.get("current_level", {})
     raw = current_level.get("grade") or profile.get("grade", "11")
     # Strip "Class " prefix if present → "Class 11" → "11"
-    import re as _re
-    m = _re.search(r'\d+', str(raw))
+    m = re.search(r'\d+', str(raw))
     return m.group(0) if m else str(raw)
 

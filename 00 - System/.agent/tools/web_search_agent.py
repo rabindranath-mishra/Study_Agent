@@ -183,7 +183,7 @@ def tavily_search(query: str, max_results: int = 10, search_depth: str = "advanc
             import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as key:
                 api_key, _ = winreg.QueryValueEx(key, "TAVILY_API_KEY")
-        except Exception:
+        except (OSError, PermissionError, FileNotFoundError):
             pass
     if not api_key:
         return [{"error": "TAVILY_API_KEY environment variable not set"}]
@@ -319,9 +319,7 @@ def main():
         enrich_top_n=args.enrich_top,
     )
 
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
 
 
 if __name__ == "__main__":

@@ -33,15 +33,16 @@ sys.path.insert(0, str(TOOLS_DIR))
 
 from paths import INBOX_DIR, PS_SCRIPT_CREATE_NOTE as _PS_WRITE, VAULT_ROOT
 
-# Import state stores (will be built in Phase 8)
+# Import state stores
 try:
     import learner_profile_store as profile_store
     import exam_calendar_store as exam_store
     import activity_log_store as log_store
     STORES_AVAILABLE = True
-except ImportError:
+except ImportError as _import_err:
     STORES_AVAILABLE = False
-    print("[WARNING]  Warning: State stores not yet built. Profile Agent will not function fully.", file=sys.stderr)
+    # Print to stderr so subprocess callers see it; JSON body is returned by run()
+    print(f"[ERROR] profile_agent: required store not found — {_import_err}", file=sys.stderr)
 
 
 class ProfileAgent:

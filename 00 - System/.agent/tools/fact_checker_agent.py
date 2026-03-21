@@ -54,7 +54,16 @@ def vault_check(claims: List[str]) -> dict:
         "--claims", json.dumps(claims),
         "--k", "8",
     ]
-    return run_tool(cmd)
+    result = run_tool(cmd)
+    if "error" in result:
+        return {
+            "pass": False,
+            "violations": [],
+            "verdict": "ERROR",
+            "claims_checked": len(claims),
+            "error": result["error"],
+        }
+    return result
 
 
 def web_check(claims: List[str], source_urls: List[str]) -> List[Dict]:
@@ -83,6 +92,8 @@ def web_check(claims: List[str], source_urls: List[str]) -> List[Dict]:
         page_text_lower = page_text.lower()
 
         for claim in claims:
+            # Cap claim length to prevent ReDoS on pathological input
+            claim_safe = claim[:500]
             # Extract key numeric terms relevant to study-domain facts
             # Matches: years (1945), percentages (45%), scientific values (9.8 m/s, 6.02 mol)
             numbers = re.findall(
@@ -90,7 +101,7 @@ def web_check(claims: List[str], source_urls: List[str]) -> List[Dict]:
                 r'(?:%|percent|kg|g|mg|m|km|cm|mm|s|ms|Hz|kHz|MHz|'
                 r'J|kJ|cal|kcal|mol|M|L|mL|Pa|kPa|N|C|K|'
                 r'eV|AU|ly|yr|AD|BC|CE|BCE)?\b',
-                claim, re.IGNORECASE
+                claim_safe, re.IGNORECASE
             )
             numbers = [n.strip() for n in numbers if n.strip() and len(n.strip()) > 1]
 
@@ -102,7 +113,7 @@ def web_check(claims: List[str], source_urls: List[str]) -> List[Dict]:
                 'while', 'these', 'those', 'both', 'will', 'would', 'could',
                 'should', 'must', 'only', 'very', 'used', 'like',
             }
-            keywords = [w for w in re.findall(r'[a-zA-Z][a-zA-Z0-9\-]+', claim)
+            keywords = [w for w in re.findall(r'[a-zA-Z][a-zA-Z0-9\-]+', claim_safe)
                         if len(w) > 3 and w.lower() not in _STOP]
 
             # Check if key terms appear in page text
@@ -133,6 +144,14 @@ def main():
         source_urls = json.loads(args.sources)
     except json.JSONDecodeError as e:
         print(json.dumps({"error": f"Invalid JSON argument: {e}"}))
+        sys.exit(2)
+
+    if not isinstance(claims, list) or not isinstance(source_urls, list):
+        print(json.dumps({"error": "--claims and --sources must be JSON arrays"}))
+        sys.exit(2)
+
+    if len(claims) > 100:
+        print(json.dumps({"error": "Too many claims (max 100 per call)"}))
         sys.exit(2)
 
     if not claims:
@@ -173,9 +192,7 @@ def main():
         "web_checked": web_checked,
     }
 
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
     sys.exit(0 if passed else 1)
 
 

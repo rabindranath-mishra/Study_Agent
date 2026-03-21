@@ -18,6 +18,20 @@ generated_by: copilot
 
 ---
 
+## Introduction
+
+The Study Agent System is a multi-agent AI learning infrastructure built on Obsidian. It is designed as pedagogically-rigorous learning infrastructure — not a general-purpose chatbot — to help students achieve mastery through structured, repeatable study workflows.
+
+The system orchestrates specialist agents (teaching, practice, fact-checking, compliance, profile, vault search, web search, indexing, and note writing) via a Copilot CLI specification (`study.agent.md`). Every persistent learning artifact is written to an Obsidian vault as a Markdown note with YAML frontmatter, making all outputs human-readable, inspectable, and linkable inside the student's knowledge graph.
+
+Three binding constraints govern the architecture:
+
+- **Vault Constitution** — 21 rules defining note standards, metadata doctrine, and write governance
+- **Sequential write-gate pipeline** — fact-check (Gate 1) then compliance (Gate 2) then write; fail-fast, no skipping
+- **Single write endpoint** — `note_writer_agent.py` enforces both gates at code level; no agent or developer may bypass it
+
+---
+
 ## Contents
 
 1. [Level 1 — System Context](#level-1--system-context)
@@ -36,20 +50,20 @@ generated_by: copilot
 
 ```mermaid
 graph LR
-    Student["👨‍🎓 Student\nGrade 9-12\nCBSE / ICSE / IB / Cambridge"]
-    Admin["⚙️ System Admin\nsetup and config"]
+    Student["👨‍🎓 Student<br/>Grade 9-12<br/>CBSE / ICSE / IB / Cambridge"]
+    Admin["⚙️ System Admin<br/>setup and config"]
 
     subgraph SAS["Study Agent System"]
-        CLI["GitHub Copilot CLI\nstudy.agent.md"]
-        PY["Python Runtime\n.agent/venv/"]
-        VAULT["Obsidian Vault\nmarkdown + YAML frontmatter"]
+        CLI["GitHub Copilot CLI<br/>study.agent.md"]
+        PY["Python Runtime<br/>.agent/venv/"]
+        VAULT["Obsidian Vault<br/>markdown + YAML frontmatter"]
     end
 
     subgraph EXT["External Systems"]
-        Tavily["Tavily API\nweb search"]
-        ST["Sentence Transformers\nall-MiniLM-L6-v2\n384-dim embeddings"]
-        FAISS_LIB["FAISS\nlocal flat index"]
-        PS["PowerShell\ncreate_note_stdin.ps1"]
+        Tavily["Tavily API<br/>web search"]
+        ST["Sentence Transformers<br/>all-MiniLM-L6-v2<br/>384-dim embeddings"]
+        FAISS_LIB["FAISS<br/>local flat index"]
+        PS["PowerShell<br/>create_note_stdin.ps1"]
     end
 
     Student -- "queries / studies" --> CLI
@@ -84,19 +98,19 @@ graph LR
 graph TB
     subgraph SAS["Study Agent System"]
         subgraph ORCH["Orchestration Layer"]
-            SAMD["study.agent.md\n17 tools · routing rules\nwrite gates · pedagogy rules"]
+            SAMD["study.agent.md<br/>17 tools · routing rules<br/>write gates · pedagogy rules"]
         end
 
         subgraph PY["Python Runtime (.agent/venv/)"]
-            Agents["Agents\nteaching · practice · fact-check\ncompliance · profile · search"]
-            Stores["State Stores\nprofile · exam-calendar · activity-log"]
+            Agents["Agents<br/>teaching · practice · fact-check<br/>compliance · profile · search"]
+            Stores["State Stores<br/>profile · exam-calendar · activity-log"]
         end
 
         subgraph DATA["Data Layer"]
-            FAISS_IDX["FAISS Index\n.agent/faiss_store/\n500+ passages"]
-            STATE_F["State Files\n.agent/state/\n*.json / *.jsonl"]
-            VAULT_MD["Vault Markdown\n01-07 · 99\n*.md + YAML frontmatter"]
-            LOGS_F["Logs\n.agent/logs/\n*.jsonl"]
+            FAISS_IDX["FAISS Index<br/>.agent/faiss_store/<br/>500+ passages"]
+            STATE_F["State Files<br/>.agent/state/<br/>*.json / *.jsonl"]
+            VAULT_MD["Vault Markdown<br/>01-07 · 99<br/>*.md + YAML frontmatter"]
+            LOGS_F["Logs<br/>.agent/logs/<br/>*.jsonl"]
         end
     end
 
@@ -129,22 +143,22 @@ graph TB
 ```mermaid
 flowchart TD
     Q(["Student Query"])
-    CT["classify_task.py\n5 task types · confidence scoring\nauto-escalate if confidence below 0.7"]
+    CT["classify_task.py<br/>5 task types · confidence scoring<br/>auto-escalate if confidence below 0.7"]
 
     Q --> CT
     CT -- "simple_lookup" --> VS1["vault_search_agent.py"]
-    CT -- "research" --> VS2["vault_search_agent.py\n+ web_search_agent.py"]
-    CT -- "note_creation" --> GEN["teach_concept\nOR practice_agent.py\n→ note_content"]
+    CT -- "research" --> VS2["vault_search_agent.py<br/>+ web_search_agent.py"]
+    CT -- "note_creation" --> GEN["teach_concept<br/>OR practice_agent.py<br/>→ note_content"]
 
-    VS1 --> R1(["Respond to student\nread-only flow"])
-    VS2 --> R2(["Respond to student\nread-only flow"])
+    VS1 --> R1(["Respond to student<br/>read-only flow"])
+    VS2 --> R2(["Respond to student<br/>read-only flow"])
 
-    GEN --> G1{"GATE 1\nfact_checker_agent.py\ncontradiction_check.py"}
-    G1 -- "FAIL" --> REJ1(["Reject\nreport conflict to student"])
-    G1 -- "PASS" --> G2{"GATE 2\ncompliance_agent.py\n10 Constitution checks"}
-    G2 -- "FAIL" --> REJ2(["Return violations\nfix and re-run"])
-    G2 -- "PASS" --> NW["note_writer_agent.py\nONLY write endpoint\ncreate_note_stdin.ps1\nindex_vault.py"]
-    NW --> VAULT(["Written to vault\nFAISS index updated"])
+    GEN --> G1{"GATE 1<br/>fact_checker_agent.py<br/>contradiction_check.py"}
+    G1 -- "FAIL" --> REJ1(["Reject<br/>report conflict to student"])
+    G1 -- "PASS" --> G2{"GATE 2<br/>compliance_agent.py<br/>10 Constitution checks"}
+    G2 -- "FAIL" --> REJ2(["Return violations<br/>fix and re-run"])
+    G2 -- "PASS" --> NW["note_writer_agent.py<br/>ONLY write endpoint<br/>create_note_stdin.ps1<br/>index_vault.py"]
+    NW --> VAULT(["Written to vault<br/>FAISS index updated"])
 ```
 
 ### Component Catalogue
@@ -218,10 +232,10 @@ flowchart TD
     IN(["Input: query string"])
 
     subgraph SIGNALS["Signal Matching"]
-        NS["NOTE_SIGNALS\nweight 0.9-1.0\n→ note_creation"]
-        VS["VAULT_SIGNALS\nweight 0.7-0.9\n→ vault_only"]
-        RS["RESEARCH_SIGNALS\nweight 0.6-0.8\n→ research"]
-        LS["LOOKUP_SIGNALS\nweight 0.5-0.7\n→ simple_lookup"]
+        NS["NOTE_SIGNALS<br/>weight 0.9-1.0<br/>→ note_creation"]
+        VS["VAULT_SIGNALS<br/>weight 0.7-0.9<br/>→ vault_only"]
+        RS["RESEARCH_SIGNALS<br/>weight 0.6-0.8<br/>→ research"]
+        LS["LOOKUP_SIGNALS<br/>weight 0.5-0.7<br/>→ simple_lookup"]
     end
 
     IN --> SIGNALS
@@ -229,24 +243,24 @@ flowchart TD
     CONF --> ESC{"confidence below 0.7?"}
     ESC -- "yes" --> ESCL["escalate one tier"]
     ESC -- "no" --> OUT
-    ESCL --> OUT(["Output: task_type\nconfidence · escalated · signals_matched"])
+    ESCL --> OUT(["Output: task_type<br/>confidence · escalated · signals_matched"])
 ```
 
 ### `note_writer_agent.py` — Gate Enforcement
 
 ```mermaid
 flowchart TD
-    IN(["Inputs: title · content\nnote_type · fact_check_result · compliance_result"])
+    IN(["Inputs: title · content<br/>note_type · fact_check_result · compliance_result"])
 
-    IN --> VFC["validate_fact_check\npass must be True"]
+    IN --> VFC["validate_fact_check<br/>pass must be True"]
     VFC -- "fail" --> E2(["exit 2 — Gate 1 not passed"])
-    VFC -- "ok" --> VCC["validate_compliance\nstatus must be PASS"]
+    VFC -- "ok" --> VCC["validate_compliance<br/>status must be PASS"]
     VCC -- "fail" --> E3(["exit 3 — Gate 2 not passed"])
-    VCC -- "ok" --> RF["resolve_folder\ntype to folder map\nconcept→04 · practice→05"]
-    RF --> WN["write_note\ncreate_note_stdin.ps1"]
+    VCC -- "ok" --> RF["resolve_folder<br/>type to folder map<br/>concept→04 · practice→05"]
+    RF --> WN["write_note<br/>create_note_stdin.ps1"]
     WN -- "fail" --> E4(["exit 4 — note write failed"])
-    WN -- "ok" --> IDX["index_vault.py\nrebuild FAISS index"]
-    IDX --> OUT(["Output: path · indexed\nindex_time_ms · gate_state"])
+    WN -- "ok" --> IDX["index_vault.py<br/>rebuild FAISS index"]
+    IDX --> OUT(["Output: path · indexed<br/>index_time_ms · gate_state"])
 ```
 
 ### `practice_agent.py` — Question Generation
@@ -254,22 +268,22 @@ flowchart TD
 ```mermaid
 flowchart TD
     PROF(["Student Profile"])
-    PROF --> CTX["_resolve_context\ndifficulty · grade · board"]
-    CTX --> MSS["marking_scheme_store.get_scheme\nq_scheme · mcq · fill_blank · true_false"]
-    CTX --> VS["Vault search\nsentences · key_terms · list_items"]
-    VS --> DQ["_distribute_questions\ntotal across types"]
+    PROF --> CTX["_resolve_context<br/>difficulty · grade · board"]
+    CTX --> MSS["marking_scheme_store.get_scheme<br/>q_scheme · mcq · fill_blank · true_false"]
+    CTX --> VS["Vault search<br/>sentences · key_terms · list_items"]
+    VS --> DQ["_distribute_questions<br/>total across types"]
     MSS --> GEN
     DQ --> GEN["Question Generators"]
 
-    GEN --> MCQ["_make_mcq\ndefinition · list-item · key-term strategies"]
-    GEN --> SA["_make_short_answer\nSAQ + value points"]
-    GEN --> LA["_make_long_answer\nLAQ + value points"]
-    GEN --> FB["_make_fill_blank\nblank key terms in sentences"]
-    GEN --> TF["_make_true_false\ntrue statements + false negations"]
+    GEN --> MCQ["_make_mcq<br/>definition · list-item · key-term strategies"]
+    GEN --> SA["_make_short_answer<br/>SAQ + value points"]
+    GEN --> LA["_make_long_answer<br/>LAQ + value points"]
+    GEN --> FB["_make_fill_blank<br/>blank key terms in sentences"]
+    GEN --> TF["_make_true_false<br/>true statements + false negations"]
 
-    MCQ & SA & LA & FB & TF --> AK["_build_answer_key\nper-question marking scheme attached"]
-    AK --> NC["_build_note_content\nObsidian markdown + frontmatter"]
-    NC --> OUT(["Output: questions · answer_key\nnote_content · board · difficulty"])
+    MCQ & SA & LA & FB & TF --> AK["_build_answer_key<br/>per-question marking scheme attached"]
+    AK --> NC["_build_note_content<br/>Obsidian markdown + frontmatter"]
+    NC --> OUT(["Output: questions · answer_key<br/>note_content · board · difficulty"])
 ```
 
 ### `teaching_agent.py` — Level Adaptation
@@ -277,10 +291,10 @@ flowchart TD
 ```mermaid
 flowchart TD
     PROF(["Student Profile"])
-    PROF --> GRADE["grade → _GRADE_LEVEL_MAP\njunior / senior / advanced"]
-    GRADE --> INST["_LEVEL_INSTRUCTIONS\nsystem_prompt suffix"]
+    PROF --> GRADE["grade → _GRADE_LEVEL_MAP<br/>junior / senior / advanced"]
+    GRADE --> INST["_LEVEL_INSTRUCTIONS<br/>system_prompt suffix"]
 
-    PROF --> VS["Vault search\nthreshold 0.6"]
+    PROF --> VS["Vault search<br/>threshold 0.6"]
     VS -- "score >= 0.6" --> VC["vault_content used"]
     VS -- "score below 0.6" --> WS["web_search fallback"]
 
@@ -456,18 +470,18 @@ flowchart TD
 
     S -- "query" --> CT
     CT -- "simple_lookup / vault_only" --> VS["vault_search_agent.py"]
-    CT -- "research" --> WS["vault_search_agent.py\n+ web_search_agent.py"]
-    CT -- "note_creation" --> NG["teach_concept\nOR practice_agent.py"]
+    CT -- "research" --> WS["vault_search_agent.py<br/>+ web_search_agent.py"]
+    CT -- "note_creation" --> NG["teach_concept<br/>OR practice_agent.py"]
 
-    VS & WS --> RO{"read-only\nresponse?"}
+    VS & WS --> RO{"read-only<br/>response?"}
     RO -- "yes" --> RESP(["Respond directly to student"])
 
-    NG --> G1["fact_checker_agent.py\nGate 1"]
+    NG --> G1["fact_checker_agent.py<br/>Gate 1"]
     G1 -- "FAIL" --> STOP(["Stop — report conflict to student"])
-    G1 -- "PASS" --> G2["compliance_agent.py\nGate 2"]
+    G1 -- "PASS" --> G2["compliance_agent.py<br/>Gate 2"]
     G2 -- "FAIL" --> FIX(["Fix violations — re-run Gate 2"])
     G2 -- "PASS" --> NW["note_writer_agent.py"]
-    NW --> VAULT(["Vault .md written\nFAISS index updated"])
+    NW --> VAULT(["Vault .md written<br/>FAISS index updated"])
 ```
 
 ---

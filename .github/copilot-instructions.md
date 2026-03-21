@@ -478,28 +478,55 @@ STATE_PATH = Path.home() / ".study_agent" / "state.json"
 - Revision plans (`06 - Plans/`)
 - Subject maps (`03 - Subjects/`)
 
-**Implementation Pattern:**
-```python
-def create_note(content: str, path: Path, requires_approval: bool = True) -> Dict:
-    """Create new note with optional approval gate."""
-    
-    if requires_approval:
-        # Return proposal for student review
-        return {
-            "action": "create_note",
-            "path": str(path),
-            "content": content,
-            "status": "pending_approval",
-            "preview": content[:500]  # First 500 chars for review
-        }
-    else:
-        # Safe automatic write (logs, state)
-        path.write_text(content, encoding='utf-8')
-        return {
-            "action": "create_note",
-            "path": str(path),
-            "status": "completed"
-        }
+---
+
+### 🔴 VAULT NOTE WRITE RULE (ABSOLUTE — applies to ALL actors)
+
+**`note_writer_agent.py` is the ONLY permitted mechanism for creating vault markdown notes.**
+
+This rule applies regardless of who is doing the work:
+- The Study Agent (study.agent.md session)
+- Copilot CLI in developer / maintenance mode
+- Any automated script or pipeline
+
+**The mandatory 3-step pipeline — no step may be skipped, no step may be reordered:**
+
+```
+Step 1 — Gate 1:  fact_checker_agent.py  → must return { "pass": true }
+Step 2 — Gate 2:  compliance_agent.py   → must return { "status": "PASS" }
+Step 3 — Write:   note_writer_agent.py  → only call after both gates pass
+```
+
+**PROHIBITED — even when building or maintaining the system:**
+- Using Copilot CLI `create` tool to write `.md` files inside the vault
+- Using Copilot CLI `edit` tool to create new vault notes from scratch
+- Using PowerShell `Set-Content` / `Out-File` to write vault notes directly
+- Calling `create_note_stdin.ps1` or `create_note.py` directly
+- Running `note_writer_agent.py` with fabricated/untested gate results
+
+**Why this matters:**
+The gate pipeline is the system's integrity backbone. Bypassing it means:
+- Fact-conflicting content can enter the vault silently
+- Non-compliant notes break vault queries and FAISS indexing
+- The audit trail becomes unreliable
+- Students receive unchecked information
+
+**Quick reference (developer context):**
+```powershell
+$py    = ".\00 - System\.agent\venv\Scripts\python.exe"
+$tools = ".\00 - System\.agent\tools"
+
+# Step 1 — Gate 1
+$fc = & $py "$tools\fact_checker_agent.py" --claims '["claim1","claim2"]'
+
+# Step 2 — Gate 2
+$ca = & $py "$tools\compliance_agent.py" --title "My Note" --content $noteContent --note-type concept
+
+# Step 3 — Write (only after both gates pass)
+& $py "$tools\note_writer_agent.py" `
+  --title "My Note" --content $noteContent `
+  --note-type concept --subject "Biology" --topic "Osmosis" `
+  --fact-check-result $fc --compliance-result $ca
 ```
 
 ### Source & Grounding Policy
@@ -1121,6 +1148,7 @@ def calculate_next_review(
 5. **Never break vault containment** - all artifacts must stay in vault
 6. **Never mix learning styles** - maintain pedagogical consistency
 7. **Never assume mastery** - always check learner state
+8. **Never use `create`/`edit`/`Set-Content` to write vault `.md` notes** — always use the `check_facts → check_compliance → note_writer_agent.py` pipeline, regardless of context (developer mode, study agent mode, or any other)
 
 ### ALWAYS
 
@@ -1131,6 +1159,7 @@ def calculate_next_review(
 5. **Always test changes** - run pytest before committing
 6. **Always document reasoning** - explain "why" not just "what"
 7. **Always prioritize learning** - mastery over completion
+8. **Always run the full write pipeline for vault notes** — `check_facts` (Gate 1) → `check_compliance` (Gate 2) → `note_writer_agent.py` (write). No step is optional, no step can be post-hoc.
 
 ## 📚 Key Resources
 

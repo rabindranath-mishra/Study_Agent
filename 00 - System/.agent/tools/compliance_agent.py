@@ -138,12 +138,15 @@ def check_subject_field(fields: Optional[Dict]) -> List[Dict]:
 def check_generated_by(fields: Optional[Dict]) -> List[Dict]:
     if fields is None:
         return []
+    # Exempt notes explicitly marked as human-authored
+    if fields.get("authored_by", "").lower() in ("human", "student", "teacher"):
+        return []
     if not fields.get("generated_by", ""):
         return [{
             "rule":     "§XIII.5",
             "location": "frontmatter.generated_by",
             "message":  "Agent-created notes must declare 'generated_by:' for inspectability",
-            "fix":      "Add 'generated_by: <agent_name>' to frontmatter",
+            "fix":      "Add 'generated_by: <agent_name>' to frontmatter, or 'authored_by: human' if human-authored",
         }]
     return []
 
@@ -273,9 +276,7 @@ def main():
 
     result = run_compliance(args.title, args.content, args.note_type)
 
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
     sys.exit(0 if result["status"] == "PASS" else 1)
 
 

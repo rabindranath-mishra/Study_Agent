@@ -1,6 +1,7 @@
 ---
 type: system
 status: governing
+authored_by: human
 created: 2026-03-08
 updated: 2026-03-08
 version: 1.0
@@ -286,6 +287,25 @@ The Student Study Agent must not make opaque or uncontrolled changes to student-
 3. The student reviews or approves non-trivial note changes.
 4. The plugin applies approved changes.
 5. Agent-originated writes must remain inspectable.
+
+## §XIII.A — The Single Write Endpoint Rule (ABSOLUTE)
+
+**`note_writer_agent.py` is the ONLY permitted mechanism for creating vault markdown notes.**
+
+This rule applies to ALL actors and ALL contexts:
+- The Study Agent operating via `study.agent.md`
+- Copilot CLI operating in developer or maintenance mode
+- Any automated pipeline, script, or CI process
+
+**Mandatory pre-write gate pipeline (sequential, fail-fast, no step may be skipped):**
+
+1. **Gate 1 — Fact Check:** `fact_checker_agent.py` must return `{ "pass": true }`
+2. **Gate 2 — Compliance:** `compliance_agent.py` must return `{ "status": "PASS" }`
+3. **Write:** `note_writer_agent.py` receives both gate results and writes the note
+
+A gate result produced *after* the write is not valid. Gates must run *before* the write.
+
+**Constitutional violation:** Using any file system tool (`create`, `Set-Content`, `Out-File`, `create_note_stdin.ps1` directly, etc.) to write vault notes without passing through both gates first is a violation of this constitution, regardless of who or what does it.
 
 ## Categories
 

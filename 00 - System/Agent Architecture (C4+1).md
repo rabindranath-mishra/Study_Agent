@@ -12,8 +12,8 @@ generated_by: copilot
 
 # Agent Architecture (C4+1)
 
-> **Model:** C4 + Scenarios view  
-> **Scope:** Study Agent System — all agents, stores, data flows, and write gates  
+> **Model:** C4 + Scenarios view
+> **Scope:** Study Agent System — all agents, stores, data flows, and write gates
 > **Last updated:** 2026-03-21
 
 ---
@@ -26,6 +26,7 @@ generated_by: copilot
 4. [Level 4 — Code / Module Map](#level-4--code--module-map)
 5. [+1 — Key Scenarios](#1--key-scenarios)
 6. [Architecture Decisions](#architecture-decisions)
+7. [Data Flow Summary](#data-flow-summary)
 
 ---
 
@@ -33,43 +34,32 @@ generated_by: copilot
 
 > *Who uses the system and what external systems does it depend on?*
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       STUDY AGENT SYSTEM                            │
-│  (Obsidian vault + AI orchestration layer)              │
-└───────┬──────────────────────────────────────┬──────────────────────┘
-        │                                      │
-        │ queries / commands                   │ vault writes / reads
-        ▼                                      ▼
-┌───────────────────┐                 ┌────────────────────┐
-│   STUDENT         │                 │   OBSIDIAN VAULT   │
-│  (primary user)   │                 │  (markdown + YAML) │
-│                   │                 │  (vault root)      │
-│  Grade 9–12       │                 │   Study_Agent\     │
-│  Board: CBSE /    │                 └────────────────────┘
-│  ICSE / IB /      │
-│  Cambridge        │
-└───────────────────┘
+```mermaid
+graph LR
+    Student["👨‍🎓 Student\nGrade 9-12\nCBSE / ICSE / IB / Cambridge"]
+    Admin["⚙️ System Admin\nsetup and config"]
 
-External Dependencies
-─────────────────────────────────────────────────────────────────
-  ┌─────────────────────┐     ┌──────────────────────────────┐
-  │   TAVILY API        │     │  SENTENCE TRANSFORMERS       │
-  │  (web search)       │     │  all-MiniLM-L6-v2            │
-  │  tavily.com         │     │  (local, 384-dim embeddings) │
-  └─────────────────────┘     └──────────────────────────────┘
+    subgraph SAS["Study Agent System"]
+        CLI["GitHub Copilot CLI\nstudy.agent.md"]
+        PY["Python Runtime\n.agent/venv/"]
+        VAULT["Obsidian Vault\nmarkdown + YAML frontmatter"]
+    end
 
-  ┌─────────────────────┐     ┌──────────────────────────────┐
-  │   FAISS             │     │  POWERSHELL                  │
-  │  (vector index)     │     │  (vault write via            │
-  │  local flat index   │     │   create_note_stdin.ps1)     │
-  └─────────────────────┘     └──────────────────────────────┘
+    subgraph EXT["External Systems"]
+        Tavily["Tavily API\nweb search"]
+        ST["Sentence Transformers\nall-MiniLM-L6-v2\n384-dim embeddings"]
+        FAISS_LIB["FAISS\nlocal flat index"]
+        PS["PowerShell\ncreate_note_stdin.ps1"]
+    end
 
-  ┌─────────────────────┐
-  │  GITHUB COPILOT CLI │
-  │  (orchestrator UI)  │
-  │  study.agent.md     │
-  └─────────────────────┘
+    Student -- "queries / studies" --> CLI
+    Admin -- "configures vault" --> VAULT
+    CLI -- "invokes tools" --> PY
+    PY -- "reads / writes" --> VAULT
+    PY -- "web search" --> Tavily
+    PY -- "embed queries" --> ST
+    PY -- "vector search" --> FAISS_LIB
+    PY -- "vault writes" --> PS
 ```
 
 ### Actors
@@ -90,45 +80,40 @@ External Dependencies
 
 > *What are the major deployable/runnable building blocks?*
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          STUDY AGENT SYSTEM                                 │
-│                                                                             │
-│  ┌──────────────────────┐    ┌─────────────────────────────────────────┐   │
-│  │  ORCHESTRATION LAYER │    │            PYTHON RUNTIME               │   │
-│  │                      │    │   00 - System/.agent/venv/              │   │
-│  │  study.agent.md      │───▶│                                         │   │
-│  │                      │    │   ┌─────────────┐  ┌────────────────┐   │   │
-│  │  Defines:            │    │   │  Agents     │  │  State Stores  │   │   │
-│  │  • 17 tools          │    │   │  (tools/*.py│  │  (tools/*.py)  │   │   │
-│  │  • Routing rules     │    │   │             │  │                │   │   │
-│  │  • Write gates       │    │   └──────┬──────┘  └───────┬────────┘   │   │
-│  │  • Pedagogy rules    │    │          │                  │            │   │
-│  └──────────────────────┘    └──────────┼──────────────────┼────────────┘   │
-│                                         │                  │                │
-│  ┌──────────────────────────────────────▼──────────────────▼────────────┐   │
-│  │                         DATA LAYER                                    │   │
-│  │                                                                       │   │
-│  │  ┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐ │   │
-│  │  │  FAISS INDEX      │  │   STATE FILES      │  │  VAULT MARKDOWN   │ │   │
-│  │  │  .agent/          │  │   .agent/state/    │  │  01 - 07, 99      │ │   │
-│  │  │  faiss_store/     │  │   *.json / *.jsonl │  │  *.md with YAML   │ │   │
-│  │  └───────────────────┘  └───────────────────┘  └───────────────────┘ │   │
-│  │                                                                       │   │
-│  │  ┌───────────────────┐                                                │   │
-│  │  │  LOGS             │                                                │   │
-│  │  │  .agent/logs/     │                                                │   │
-│  │  │  *.jsonl          │                                                │   │
-│  │  └───────────────────┘                                                │   │
-│  └───────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph SAS["Study Agent System"]
+        subgraph ORCH["Orchestration Layer"]
+            SAMD["study.agent.md\n17 tools · routing rules\nwrite gates · pedagogy rules"]
+        end
+
+        subgraph PY["Python Runtime (.agent/venv/)"]
+            Agents["Agents\nteaching · practice · fact-check\ncompliance · profile · search"]
+            Stores["State Stores\nprofile · exam-calendar · activity-log"]
+        end
+
+        subgraph DATA["Data Layer"]
+            FAISS_IDX["FAISS Index\n.agent/faiss_store/\n500+ passages"]
+            STATE_F["State Files\n.agent/state/\n*.json / *.jsonl"]
+            VAULT_MD["Vault Markdown\n01-07 · 99\n*.md + YAML frontmatter"]
+            LOGS_F["Logs\n.agent/logs/\n*.jsonl"]
+        end
+    end
+
+    SAMD -- "tool invocations" --> Agents
+    SAMD -- "state queries" --> Stores
+    Agents -- "semantic search" --> FAISS_IDX
+    Agents -- "read / write state" --> STATE_F
+    Stores -- "read / write state" --> STATE_F
+    Agents -- "write notes (via gates)" --> VAULT_MD
+    Agents -- "append events" --> LOGS_F
 ```
 
 ### Containers
 
 | Container | Technology | Responsibility |
 |-----------|-----------|----------------|
-| **Orchestration Layer** | `study.agent.md` (Copilot CLI spec) | Routes student intent → tools; enforces pedagogy and gate rules |
+| **Orchestration Layer** | `study.agent.md` (Copilot CLI spec) | Routes student intent to tools; enforces pedagogy and gate rules |
 | **Python Runtime** | Python 3.9+, venv at `.agent/venv/` | Executes all agents and stores |
 | **FAISS Index** | FAISS flat index + `metadata.jsonl` | Semantic search over 500+ vault passages |
 | **State Files** | JSON / JSONL in `.agent/state/` | Learner profile, mastery, revision queue, exam calendar |
@@ -141,61 +126,25 @@ External Dependencies
 
 > *What are the components inside the Python Runtime container?*
 
-```
-                    Student Query
-                         │
-                         ▼
-              ┌──────────────────────┐
-              │   classify_task.py   │  ← regex signal matching
-              │   5 task types       │    confidence scoring
-              │   auto-escalation    │    escalate if < 0.7
-              └──────┬───────────────┘
-                     │ task_type + confidence
-          ┌──────────┼────────────────────┐
-          │          │                    │
-          ▼          ▼                    ▼
-  [simple_lookup] [research]        [note_creation]
-          │          │                    │
-          ▼          ▼                    ▼
-  ┌───────────┐  ┌──────────────────┐  ┌──────────────────────────────┐
-  │  vault_   │  │  vault_search_   │  │  teach_concept  OR           │
-  │  search_  │  │  agent.py        │  │  practice_agent.py           │
-  │  agent.py │  │  + web_search_   │  │                              │
-  └───────────┘  │  agent.py        │  │  → note_content              │
-                 └──────────────────┘  └──────────────┬───────────────┘
-                                                       │
-                                                       ▼
-                                            ┌──────────────────────┐
-                                            │  GATE 1              │
-                                            │  fact_checker_       │
-                                            │  agent.py            │
-                                            │  └─ contradiction_   │
-                                            │     check.py         │
-                                            │  pass? ──────────────┼──── NO → reject
-                                            └──────────────────────┘
-                                                       │ YES
-                                                       ▼
-                                            ┌──────────────────────┐
-                                            │  GATE 2              │
-                                            │  compliance_         │
-                                            │  agent.py            │
-                                            │  10 Constitution     │
-                                            │  checks              │
-                                            │  PASS? ──────────────┼──── NO → reject + violations
-                                            └──────────────────────┘
-                                                       │ YES
-                                                       ▼
-                                            ┌──────────────────────┐
-                                            │  note_writer_        │
-                                            │  agent.py            │  ← ONLY write endpoint
-                                            │  └─ create_note_     │
-                                            │     stdin.ps1        │
-                                            │  └─ index_vault.py   │  ← re-indexes new note
-                                            └──────────────────────┘
-                                                       │
-                                                       ▼
-                                               Written to vault
-                                               + FAISS updated
+```mermaid
+flowchart TD
+    Q(["Student Query"])
+    CT["classify_task.py\n5 task types · confidence scoring\nauto-escalate if confidence below 0.7"]
+
+    Q --> CT
+    CT -- "simple_lookup" --> VS1["vault_search_agent.py"]
+    CT -- "research" --> VS2["vault_search_agent.py\n+ web_search_agent.py"]
+    CT -- "note_creation" --> GEN["teach_concept\nOR practice_agent.py\n→ note_content"]
+
+    VS1 --> R1(["Respond to student\nread-only flow"])
+    VS2 --> R2(["Respond to student\nread-only flow"])
+
+    GEN --> G1{"GATE 1\nfact_checker_agent.py\ncontradiction_check.py"}
+    G1 -- "FAIL" --> REJ1(["Reject\nreport conflict to student"])
+    G1 -- "PASS" --> G2{"GATE 2\ncompliance_agent.py\n10 Constitution checks"}
+    G2 -- "FAIL" --> REJ2(["Return violations\nfix and re-run"])
+    G2 -- "PASS" --> NW["note_writer_agent.py\nONLY write endpoint\ncreate_note_stdin.ps1\nindex_vault.py"]
+    NW --> VAULT(["Written to vault\nFAISS index updated"])
 ```
 
 ### Component Catalogue
@@ -204,7 +153,7 @@ External Dependencies
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| **Task Classifier** | `classify_task.py` | Parses query → task type + confidence; auto-escalates if confidence < 0.7 |
+| **Task Classifier** | `classify_task.py` | Parses query to task type + confidence; auto-escalates if confidence < 0.7 |
 
 #### Retrieval
 
@@ -219,7 +168,7 @@ External Dependencies
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| **Teaching Agent** | `teaching_agent.py` | Level-adapted concept explanation; adapts to grade + learning_style; vault-first → web fallback (threshold 0.6) |
+| **Teaching Agent** | `teaching_agent.py` | Level-adapted concept explanation; adapts to grade + learning_style; vault-first with web fallback at threshold 0.6 |
 | **Practice Agent** | `practice_agent.py` | Generates 5 question types (MCQ, short_answer, long_answer, fill_blank, true_false); board-aware marking scheme |
 | **Marking Scheme Store** | `marking_scheme_store.py` | Single source of truth for marking rules across CBSE, ICSE, IB, Cambridge, Generic |
 
@@ -228,7 +177,7 @@ External Dependencies
 | Component | File | Gate | Pass Condition |
 |-----------|------|------|----------------|
 | **Fact Checker** | `fact_checker_agent.py` | Gate 1 | `pass: true` — no vault contradictions (negation, numeric mismatch) |
-| **Contradiction Check** | `contradiction_check.py` | Gate 1 (sub) | CLEAR or REVIEW verdict; CONFLICT → fails Gate 1 |
+| **Contradiction Check** | `contradiction_check.py` | Gate 1 (sub) | CLEAR or REVIEW verdict; CONFLICT fails Gate 1 |
 | **Compliance Agent** | `compliance_agent.py` | Gate 2 | `status: PASS` — all 10 Constitution checks pass |
 
 #### Vault Write
@@ -239,7 +188,7 @@ External Dependencies
 | **Create Note** | `create_note.py` + `create_note_stdin.ps1` | Atomic file creation via PowerShell |
 | **Vault Indexer** | `index_vault.py` | Rebuilds FAISS index from all vault markdown; runs post-write |
 
-#### Profile & State
+#### Profile and State
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
@@ -254,7 +203,7 @@ External Dependencies
 |-----------|------|----------------|
 | **Path Constants** | `paths.py` | Single source of truth for all file system paths; derived from `__file__` location — vault-portable |
 | **Generate Presentation** | `generate_presentation.py` | Renders vault markdown notes as HTML slide presentations |
-| **Archive & Reset** | `archive_and_reset.py` | Batch-archives content folders to `99 - Archive/`; re-indexes |
+| **Archive and Reset** | `archive_and_reset.py` | Batch-archives content folders to `99 - Archive/`; re-indexes |
 
 ---
 
@@ -264,89 +213,87 @@ External Dependencies
 
 ### `classify_task.py` — Signal Routing
 
-```
-Input: query string
-  │
-  ├─ NOTE_SIGNALS     (weight 0.9–1.0)  → note_creation
-  ├─ VAULT_SIGNALS    (weight 0.7–0.9)  → vault_only
-  ├─ RESEARCH_SIGNALS (weight 0.6–0.8)  → multi_topic_research / verified_research
-  └─ LOOKUP_SIGNALS   (weight 0.5–0.7)  → simple_lookup
-         │
-  Confidence = Σ(matched weights) / max_possible
-         │
-  if confidence < 0.7 → escalate one tier
-         │
-Output: { task_type, confidence, escalated, signals_matched }
+```mermaid
+flowchart TD
+    IN(["Input: query string"])
+
+    subgraph SIGNALS["Signal Matching"]
+        NS["NOTE_SIGNALS\nweight 0.9-1.0\n→ note_creation"]
+        VS["VAULT_SIGNALS\nweight 0.7-0.9\n→ vault_only"]
+        RS["RESEARCH_SIGNALS\nweight 0.6-0.8\n→ research"]
+        LS["LOOKUP_SIGNALS\nweight 0.5-0.7\n→ simple_lookup"]
+    end
+
+    IN --> SIGNALS
+    SIGNALS --> CONF["Confidence = sum of matched weights / max_possible"]
+    CONF --> ESC{"confidence below 0.7?"}
+    ESC -- "yes" --> ESCL["escalate one tier"]
+    ESC -- "no" --> OUT
+    ESCL --> OUT(["Output: task_type\nconfidence · escalated · signals_matched"])
 ```
 
 ### `note_writer_agent.py` — Gate Enforcement
 
-```
-Inputs: title, content, note_type, fact_check_result, compliance_result
-  │
-  ├─ validate_fact_check(fact_check_result)
-  │    fact_check_result.pass must be True          → else exit(2)
-  │
-  ├─ validate_compliance(compliance_result)
-  │    compliance_result.status must be "PASS"      → else exit(3)
-  │
-  ├─ resolve_folder(note_type, explicit_folder)
-  │    type → folder map (concept→04, practice→05, etc.)
-  │
-  ├─ write_note(title, content, folder)
-  │    PowerShell create_note_stdin.ps1             → else exit(4)
-  │
-  └─ Output: { path, indexed, index_time_ms, gate_state }
+```mermaid
+flowchart TD
+    IN(["Inputs: title · content\nnote_type · fact_check_result · compliance_result"])
+
+    IN --> VFC["validate_fact_check\npass must be True"]
+    VFC -- "fail" --> E2(["exit 2 — Gate 1 not passed"])
+    VFC -- "ok" --> VCC["validate_compliance\nstatus must be PASS"]
+    VCC -- "fail" --> E3(["exit 3 — Gate 2 not passed"])
+    VCC -- "ok" --> RF["resolve_folder\ntype to folder map\nconcept→04 · practice→05"]
+    RF --> WN["write_note\ncreate_note_stdin.ps1"]
+    WN -- "fail" --> E4(["exit 4 — note write failed"])
+    WN -- "ok" --> IDX["index_vault.py\nrebuild FAISS index"]
+    IDX --> OUT(["Output: path · indexed\nindex_time_ms · gate_state"])
 ```
 
 ### `practice_agent.py` — Question Generation
 
-```
-Profile → _resolve_context() → (difficulty, grade, board)
-                │
-                ▼
-  Board → marking_scheme_store.get_scheme(board)
-                │
-                ├─ q_scheme   (mark bands: 1/2/3/5/8)
-                ├─ mcq        (marking rule)
-                ├─ fill_blank (marking rule)
-                └─ true_false (marking rule)
-                │
-  Vault search → extract sentences, key_terms, list_items
-                │
-  _distribute_questions(total, types)
-                │
-  Generators:
-    ├─ _make_mcq()          → 3 strategies (definition, list-item, key-term)
-    ├─ _make_short_answer() → SAQ with value points
-    ├─ _make_long_answer()  → LAQ with value points
-    ├─ _make_fill_blank()   → blank out key terms in sentences
-    └─ _make_true_false()   → true statements from content + false negations
-                │
-  _build_answer_key()  → per-question marking scheme attached
-  _build_note_content() → Obsidian-ready markdown with frontmatter
-                │
-Output: { questions[], answer_key[], note_content, board, difficulty, ... }
+```mermaid
+flowchart TD
+    PROF(["Student Profile"])
+    PROF --> CTX["_resolve_context\ndifficulty · grade · board"]
+    CTX --> MSS["marking_scheme_store.get_scheme\nq_scheme · mcq · fill_blank · true_false"]
+    CTX --> VS["Vault search\nsentences · key_terms · list_items"]
+    VS --> DQ["_distribute_questions\ntotal across types"]
+    MSS --> GEN
+    DQ --> GEN["Question Generators"]
+
+    GEN --> MCQ["_make_mcq\ndefinition · list-item · key-term strategies"]
+    GEN --> SA["_make_short_answer\nSAQ + value points"]
+    GEN --> LA["_make_long_answer\nLAQ + value points"]
+    GEN --> FB["_make_fill_blank\nblank key terms in sentences"]
+    GEN --> TF["_make_true_false\ntrue statements + false negations"]
+
+    MCQ & SA & LA & FB & TF --> AK["_build_answer_key\nper-question marking scheme attached"]
+    AK --> NC["_build_note_content\nObsidian markdown + frontmatter"]
+    NC --> OUT(["Output: questions · answer_key\nnote_content · board · difficulty"])
 ```
 
 ### `teaching_agent.py` — Level Adaptation
 
-```
-Profile → grade → _GRADE_LEVEL_MAP → level (junior/senior/advanced)
-                                    │
-                         _LEVEL_INSTRUCTIONS[level] → system_prompt suffix
-                                    │
-Vault search (threshold 0.6)        │
-  ├─ score ≥ 0.6 → vault_content   │
-  └─ score < 0.6 → web_search()    │
-                │                  │
-  Compose response:                 │
-    explanation  ← adapted to level ┘
-    examples     ← concrete, age-appropriate
-    key_points   ← exam-focused
-    exam_tips    ← board-specific
-    pedagogy     ← suggested next steps
-    sources      ← vault refs + web URLs
+```mermaid
+flowchart TD
+    PROF(["Student Profile"])
+    PROF --> GRADE["grade → _GRADE_LEVEL_MAP\njunior / senior / advanced"]
+    GRADE --> INST["_LEVEL_INSTRUCTIONS\nsystem_prompt suffix"]
+
+    PROF --> VS["Vault search\nthreshold 0.6"]
+    VS -- "score >= 0.6" --> VC["vault_content used"]
+    VS -- "score below 0.6" --> WS["web_search fallback"]
+
+    VC --> COMP["Compose Response"]
+    WS --> COMP
+    INST --> COMP
+
+    COMP --> EXP["explanation — adapted to level"]
+    COMP --> EX["examples — concrete and age-appropriate"]
+    COMP --> KP["key_points — exam-focused"]
+    COMP --> ET["exam_tips — board-specific"]
+    COMP --> PED["pedagogy — next steps suggested"]
+    COMP --> SRC["sources — vault refs + web URLs"]
 ```
 
 ---
@@ -359,155 +306,126 @@ Vault search (threshold 0.6)        │
 
 ### Scenario 1: Student asks "Explain photosynthesis"
 
-```
-Student: "Explain photosynthesis"
-    │
-    ▼
-classify_task.py
-  → signals: ["explain"] → simple_lookup (confidence 0.65)
-  → escalate to vault_only (confidence < 0.7)
-  → task_type: "vault_only"
-    │
-    ▼
-vault_search_agent.py
-  → query: "photosynthesis"
-  → FAISS top score: 0.72  (≥ 0.6 threshold)
-  → returns 5 vault findings from 04 - Concepts/
-    │
-    ▼
-teaching_agent.py
-  → profile: Grade 11, CBSE, learning_style: balanced
-  → level: "senior" (Grade 11)
-  → vault_score: 0.72 → use vault content (no web fallback)
-  → adapts: formal language, board exam focus, definition + explanation + examples
-    │
-    ▼
-Response to student (no vault write — read-only flow)
+```mermaid
+sequenceDiagram
+    actor Student
+    participant CT as classify_task.py
+    participant VS as vault_search_agent.py
+    participant TA as teaching_agent.py
+
+    Student->>CT: "Explain photosynthesis"
+    CT-->>CT: signals: explain → simple_lookup confidence 0.65
+    CT-->>CT: escalate to vault_only (confidence below 0.7)
+    CT->>VS: query: photosynthesis
+    VS-->>VS: FAISS top score 0.72 (above 0.6 threshold)
+    VS->>CT: 5 vault findings from 04 - Concepts/
+    CT->>TA: vault_content + student profile
+    TA-->>TA: Grade 11 → senior level, CBSE board
+    TA->>Student: explanation + examples + key_points + exam_tips
+    Note over Student,TA: Read-only flow — no vault write
 ```
 
 ---
 
 ### Scenario 2: Student asks "Create a concept note on osmosis"
 
-```
-Student: "Create a concept note on osmosis"
-    │
-    ▼
-classify_task.py
-  → signals: ["create", "note", "concept"] → note_creation (confidence 0.95)
-    │
-    ▼
-vault_search_agent.py
-  → query: "osmosis"
-  → FAISS top score: 0.58 (< 0.6 threshold)
-    │
-    ▼
-web_search_agent.py (fallback)
-  → Tavily query: "osmosis CBSE class 11"
-  → returns 3 educational sources
-    │
-    ▼
-teaching_agent.py
-  → compose note_content (explanation + examples + key_points)
-  → frontmatter: type: concept, subject: Biology, topic: Osmosis
-    │
-    ▼
-fact_checker_agent.py  [GATE 1]
-  → contradiction_check.py: k=8 vault chunks retrieved
-  → no numeric mismatches, no negation patterns
-  → verdict: CLEAR, pass: true ✓
-    │
-    ▼
-compliance_agent.py  [GATE 2]
-  → 10 checks: frontmatter ✓, type: concept ✓, subject: Biology ✓,
-               H1 matches title ✓, no date prefix ✓, generated_by ✓, ...
-  → status: PASS ✓
-    │
-    ▼
-note_writer_agent.py
-  → both gates verified internally
-  → folder: 04 - Concepts/
-  → create_note_stdin.ps1 writes file
-  → index_vault.py re-indexes (514 passages)
-    │
-    ▼
-Response: { path: "04 - Concepts/Osmosis.md", indexed: true, ... }
+```mermaid
+sequenceDiagram
+    actor Student
+    participant CT as classify_task.py
+    participant VS as vault_search_agent.py
+    participant WS as web_search_agent.py
+    participant TA as teaching_agent.py
+    participant FC as fact_checker_agent.py
+    participant CA as compliance_agent.py
+    participant NW as note_writer_agent.py
+
+    Student->>CT: "Create a concept note on osmosis"
+    CT-->>CT: note_creation confidence 0.95
+    CT->>VS: query: osmosis
+    VS-->>VS: FAISS top score 0.58 (below 0.6 threshold)
+    VS->>WS: vault insufficient — web fallback triggered
+    WS-->>WS: Tavily: osmosis CBSE class 11
+    WS->>TA: 3 educational sources
+    TA-->>TA: compose note_content with frontmatter
+    TA->>FC: claims extracted from note
+    Note over FC: GATE 1
+    FC-->>FC: contradiction_check k=8 chunks
+    FC-->>FC: verdict CLEAR — pass true
+    FC->>CA: fact_check_result
+    Note over CA: GATE 2
+    CA-->>CA: 10 checks: frontmatter type H1 generated_by all pass
+    CA-->>CA: status PASS
+    CA->>NW: compliance_result
+    NW-->>NW: both gates verified internally
+    NW-->>NW: create_note_stdin.ps1 → 04 - Concepts/Osmosis.md
+    NW-->>NW: index_vault.py re-indexes
+    NW->>Student: path 04 - Concepts/Osmosis.md indexed true
 ```
 
 ---
 
 ### Scenario 3: Student adds a new subject
 
-```
-Student: "Add Physics to my subjects"
-    │
-    ▼
-classify_task.py → simple_lookup or vault_only
-    │
-    ▼
-Orchestrator detects "add subject" intent → profile management flow
-    │
-    ▼
-check_profile (check_profile_exists)
-  → exists: true, student_name: "Shaatvik Mishra"
-    │
-    ▼
-add_subject("Physics", difficulty="intermediate")
-  → learner_profile_store.add_subject()
-  → creates Physics-mastery.json (empty)
-  → creates Physics-revision-queue.json (empty)
-  → activity_log_store.log_event("subject_added", subject="Physics")
-    │
-    ▼
-write_student_card()  [AUTO-TRIGGERED]
-  → _build_student_card_content(updated_profile)
-  → PowerShell writes "01 - Inbox/Student Card - Shaatvik Mishra.md"
-  → card now shows 6 subjects including Physics
-    │
-    ▼
-Response: { status: success, subject: Physics, all_subjects: [...] }
+```mermaid
+sequenceDiagram
+    actor Student
+    participant OR as Orchestrator
+    participant CP as profile_agent.py
+    participant LPS as learner_profile_store.py
+    participant ALS as activity_log_store.py
+    participant SC as write_student_card
+
+    Student->>OR: "Add Physics to my subjects"
+    OR->>CP: check_profile_exists
+    CP-->>OR: exists true — Shaatvik Mishra Grade 11
+    OR->>CP: add_subject Physics difficulty intermediate
+    CP->>LPS: add_subject()
+    LPS-->>LPS: create Physics-mastery.json
+    LPS-->>LPS: create Physics-revision-queue.json
+    LPS->>ALS: log_event subject_added Physics
+    CP->>SC: auto-trigger write_student_card
+    Note over SC: AUTO-TRIGGERED on every profile mutation
+    SC-->>SC: _build_student_card_content updated profile
+    SC-->>SC: PowerShell writes Student Card md to 01 - Inbox/
+    SC->>Student: status success — 6 subjects including Physics
 ```
 
 ---
 
 ### Scenario 4: Practice question generation (board-aware)
 
-```
-Student: "Generate practice questions on the French Revolution"
-    │
-    ▼
-generate_practice --topic "French Revolution" --subject History
-    │
-    ▼
-practice_agent.py
-  → _resolve_context(profile) → difficulty: intermediate, grade: 11, board: CBSE
-  → marking_scheme_store.get_scheme("CBSE")
-      q_scheme: { 1:..., 2:..., 3:..., 5:..., 8:... }
-      mcq:       { note: "Full mark for correct answer only." }
-      true_false: { marks_answer: 0.5, marks_justification: 0.5 }
-    │
-    ▼
-vault_search_agent.py
-  → score: 0.41 (< 0.6) → web fallback
-  → web_search("French Revolution History CBSE class 11")
-    │
-    ▼
-  Extract: sentences[], key_terms[], list_items[]
-    │
-    ▼
-  Generate:
-    3 × MCQ         (1 mark each, CBSE scheme)
-    4 × short_answer (3 marks each, value points)
-    2 × long_answer  (5 marks each, value points)
-    2 × fill_blank   (1 mark each)
-    3 × true_false   (1 mark each: 0.5+0.5)
-    │
-    ▼
-  _build_answer_key() → CBSE value-point format per question
-  _build_note_content() → Obsidian markdown ready for vault
-    │
-    ▼
-Output: note_content written to 05 - Practice/ (after gates)
+```mermaid
+sequenceDiagram
+    actor Student
+    participant PRA as practice_agent.py
+    participant MSS as marking_scheme_store.py
+    participant VS as vault_search_agent.py
+    participant WS as web_search_agent.py
+    participant FC as fact_checker_agent.py
+    participant CA as compliance_agent.py
+    participant NW as note_writer_agent.py
+
+    Student->>PRA: "Generate practice on the French Revolution"
+    PRA-->>PRA: _resolve_context → intermediate grade 11 CBSE
+    PRA->>MSS: get_scheme CBSE
+    MSS-->>PRA: q_scheme bands 1/2/3/5/8 — mcq true_false schemes
+    PRA->>VS: query: French Revolution History
+    VS-->>VS: score 0.41 (below 0.6) — web fallback
+    VS->>WS: French Revolution History CBSE class 11
+    WS-->>PRA: sentences · key_terms · list_items
+    PRA-->>PRA: generate 14 questions across 5 types
+    PRA-->>PRA: _build_answer_key CBSE value-point format
+    PRA-->>PRA: _build_note_content Obsidian markdown
+    PRA->>FC: claims from note content
+    Note over FC: GATE 1
+    FC-->>FC: pass true
+    FC->>CA: fact_check_result
+    Note over CA: GATE 2
+    CA-->>CA: status PASS
+    CA->>NW: compliance_result
+    NW-->>NW: write to 05 - Practice/
+    NW->>Student: French Revolution Practice Questions.md indexed true
 ```
 
 ---
@@ -517,57 +435,39 @@ Output: note_content written to 05 - Practice/ (after gates)
 | # | Decision | Rationale |
 |---|----------|-----------|
 | **AD-1** | `paths.py` as single source of truth for all paths | Vault-portable: moving the vault to any directory requires zero code changes |
-| **AD-2** | Sequential fail-fast gates (Fact → Compliance → Write) | Prevents bad data from entering vault; Gate 2 never runs if Gate 1 fails |
+| **AD-2** | Sequential fail-fast gates (Fact then Compliance then Write) | Prevents bad data from entering vault; Gate 2 never runs if Gate 1 fails |
 | **AD-3** | `note_writer_agent.py` as the only vault write endpoint | Single point of enforcement; no agent can bypass gates |
 | **AD-4** | Vault score threshold 0.6 for web fallback | Below 0.6 the vault content is not reliably relevant; web search adds marginal value above it |
 | **AD-5** | Task auto-escalation at confidence < 0.7 | Low-confidence classification should err toward more thorough processing |
 | **AD-6** | Board-aware marking via `marking_scheme_store.py` | Supporting multiple boards (CBSE, ICSE, IB, Cambridge) requires centralised scheme data |
 | **AD-7** | Student card auto-refreshed on every profile mutation | Obsidian vault always reflects current profile without a separate sync step |
 | **AD-8** | State in JSON/JSONL, not a database | Obsidian-first philosophy: all learner state lives inside the vault and is human-readable |
-| **AD-9** | FAISS flat index (no IVF/HNSW) | Vault size (< 10,000 passages) makes exact search faster than approximate; no training step |
+| **AD-9** | FAISS flat index (no IVF/HNSW) | Vault size below 10,000 passages makes exact search faster than approximate; no training step |
 | **AD-10** | all-MiniLM-L6-v2 cached locally | No network dependency at inference time; works fully offline |
 
 ---
 
 ## Data Flow Summary
 
-```
-                    ┌─────────┐
-                    │ Student │
-                    └────┬────┘
-                         │ query
-                         ▼
-              ┌───────────────────────┐
-              │   classify_task.py    │
-              └──────────┬────────────┘
-                         │ task_type
-          ┌──────────────┼──────────────┐
-          │              │              │
-          ▼              ▼              ▼
-    vault_search   web_search     note generation
-          │              │         (teach / practice)
-          │              │              │
-          └──────────────┴──────────────┘
-                         │ content
-                         │
-          ┌──────────────┼────────────────────┐
-          │   read-only? │ vault write?        │
-          ▼              ▼                     │
-      respond        fact_checker              │
-      directly       (Gate 1)                  │
-                         │ pass                │
-                         ▼                     │
-                    compliance                 │
-                    (Gate 2)                   │
-                         │ PASS               │
-                         ▼                     │
-                    note_writer ◄──────────────┘
-                         │
-                         ▼
-                  ┌─────────────┐
-                  │  Vault .md  │
-                  │  FAISS idx  │
-                  └─────────────┘
+```mermaid
+flowchart TD
+    S(["Student"])
+    CT["classify_task.py"]
+
+    S -- "query" --> CT
+    CT -- "simple_lookup / vault_only" --> VS["vault_search_agent.py"]
+    CT -- "research" --> WS["vault_search_agent.py\n+ web_search_agent.py"]
+    CT -- "note_creation" --> NG["teach_concept\nOR practice_agent.py"]
+
+    VS & WS --> RO{"read-only\nresponse?"}
+    RO -- "yes" --> RESP(["Respond directly to student"])
+
+    NG --> G1["fact_checker_agent.py\nGate 1"]
+    G1 -- "FAIL" --> STOP(["Stop — report conflict to student"])
+    G1 -- "PASS" --> G2["compliance_agent.py\nGate 2"]
+    G2 -- "FAIL" --> FIX(["Fix violations — re-run Gate 2"])
+    G2 -- "PASS" --> NW["note_writer_agent.py"]
+    NW --> VAULT(["Vault .md written\nFAISS index updated"])
 ```
 
 ---

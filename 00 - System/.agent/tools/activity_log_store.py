@@ -13,10 +13,12 @@ from pathlib import Path
 from datetime import datetime
 from typing import Any
 
-_TOOLS_DIR = Path(__file__).resolve().parent
-_AGENT_DIR = _TOOLS_DIR.parent
-LOGS_DIR  = _AGENT_DIR / "logs"
-LOG_FILE  = LOGS_DIR / "activity-log.jsonl"
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import LOGS_DIR as _LOGS_DIR_STR
+
+LOGS_DIR = Path(_LOGS_DIR_STR)
+LOG_FILE = LOGS_DIR / "activity-log.jsonl"
 
 
 def _ensure_logs_dir() -> None:

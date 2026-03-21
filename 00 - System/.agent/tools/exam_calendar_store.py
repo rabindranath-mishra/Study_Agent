@@ -15,9 +15,11 @@ from pathlib import Path
 from datetime import datetime, date
 from typing import Dict, Any, List, Optional
 
-_TOOLS_DIR = Path(__file__).resolve().parent
-_AGENT_DIR = _TOOLS_DIR.parent
-STATE_DIR = _AGENT_DIR / "state"
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import STATE_DIR as _STATE_DIR_STR
+
+STATE_DIR     = Path(_STATE_DIR_STR)
 CALENDAR_FILE = STATE_DIR / "exam-calendar.json"
 
 

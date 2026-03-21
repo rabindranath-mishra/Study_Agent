@@ -20,6 +20,12 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import (
+    VAULT_ROOT, PYTHON_EXE, FAISS_STORE, MODEL_PATH,
+    ARCHIVE_DIR,
+)
+
 # Folders to archive
 SOURCE_FOLDERS = [
     "02 - Sources",
@@ -89,22 +95,18 @@ def reindex_vault(vault_root, dry_run=False):
         print("\n[DRY-RUN] Would re-index vault with:")
         print(f"  index_vault.py {vault_root}")
         return True
-    
-    vault_path = Path(vault_root)
-    agent_dir = vault_path / "00 - System" / ".agent"
-    index_script = agent_dir / "tools" / "index_vault.py"
-    faiss_store = agent_dir / "faiss_store"
-    model_path = agent_dir / "models" / "all-MiniLM-L6-v2"
-    python_exe = agent_dir / "venv" / "Scripts" / "python.exe"
-    
+
+    index_script = Path(PYTHON_EXE).parent.parent / "tools" / "index_vault.py"
+    python_exe   = Path(PYTHON_EXE)
+
     if not python_exe.exists():
         print(f"ERROR: Python executable not found at {python_exe}")
         return False
-    
+
     print("\nRe-indexing vault...")
     try:
         result = subprocess.run(
-            [str(python_exe), str(index_script), str(vault_root), str(faiss_store), str(model_path)],
+            [str(python_exe), str(index_script), str(vault_root), FAISS_STORE, MODEL_PATH],
             capture_output=True,
             text=True,
             timeout=300  # 5 minute timeout

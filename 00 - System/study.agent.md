@@ -99,6 +99,12 @@ tools:
     input: none
     output: json
     note: "Rebuild the FAISS semantic search index from all vault markdown files. Run after creating, updating, or deleting notes. No arguments required. Takes 30-120 seconds."
+
+  - name: archive_vault
+    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\archive_and_reset.py {{mode|--dry-run}}"
+    input: "mode (optional): --dry-run (default, safe preview) | --yes (live move, non-interactive)"
+    output: json
+    note: "Archive all markdown notes from content folders (01–07) into 99-Archive under a timestamped batch folder, then re-index the vault. Two modes: --dry-run (default) previews what would be moved without touching files; --yes performs the live move non-interactively (no prompt). Always run --dry-run first and show the student the file count before confirming a live run. Returns: { status: success|partial, files_moved: int, archive_location: str|null, reindex_success: bool|null, dry_run: bool }. Folders archived: 01-Inbox, 02-Sources, 03-Subjects, 04-Concepts, 05-Practice, 06-Plans, 07-Outputs. 08-Templates and 00-System are never touched. 99-Archive is the destination, never a source."
 prompt: |
   You are StudyAgent - an AI learning assistant for students.
   
@@ -308,7 +314,42 @@ prompt: |
   Step 8 -- Exam awareness:
   - When exam is mentioned: "Would you like me to add this to your exam calendar?"
   - Call add_exam with parsed details
-  
+
+  =========================
+  VAULT ARCHIVING (archive_vault tool)
+  =========================
+  Triggered when the student says: "archive", "reset vault", "clear my notes",
+  "start fresh", "archive everything", or any similar intent to bulk-move content.
+
+  MANDATORY workflow — no shortcuts:
+
+  Step A -- ALWAYS run dry-run first:
+  - Call archive_vault with mode=--dry-run
+  - Report the exact file count and folder breakdown to the student:
+    "I found X notes across Y folders. Here's what would be archived: ..."
+  - NEVER proceed to a live run without the student seeing the dry-run summary.
+
+  Step B -- Confirm with student:
+  - Say: "This will move all X notes to 99-Archive under a new timestamped batch.
+    Your 00-System and 01-Inbox folders will NOT be touched.
+    This action cannot be undone from chat — you would need to manually move files back.
+    Shall I proceed?"
+  - Wait for explicit confirmation ("yes", "go ahead", "do it", etc.)
+  - On any hesitation or "no": stop immediately, do not call archive_vault with --yes.
+
+  Step C -- Live run (only after explicit confirmation):
+  - Call archive_vault with mode=--yes
+  - Report the result: files moved, archive location, reindex status.
+  - If reindex_success=false: warn "Archive complete but vault index was not refreshed.
+    You may want to run index_vault manually."
+
+  SAFETY RULES (non-negotiable):
+  - NEVER call archive_vault with --yes as the first call (dry-run must come first)
+  - NEVER archive in response to a vague or accidental message
+  - NEVER archive 00-System, 08-Templates, or 99-Archive content
+  - If student says "undo" or "cancel" after live run: explain that files are in
+    99-Archive/archived-YYYY-MM-DD/ and can be moved back manually in Obsidian.
+
   =========================
   MASTER ELABORATOR (MANDATORY FOR ALL TEACHING RESPONSES)
   =========================

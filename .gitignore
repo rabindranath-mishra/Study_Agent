@@ -91,3 +91,42 @@ Thumbs.db
 # Obsidian workspace layout (machine-specific)
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
+
+# ── Personal study content ────────────────────────────────────────────────────
+# Folders below contain private student notes, sources, and archived material.
+# Content is ignored; folder skeletons are preserved via .gitkeep so the vault
+# structure can be cloned and used immediately without exposing any student data.
+
+# 01 - Inbox  (capture zone — student notes, student card)
+01 - Inbox/*
+!01 - Inbox/.gitkeep
+
+# 02 - Sources  (primary learning materials uploaded by student)
+02 - Sources/*
+!02 - Sources/.gitkeep
+
+# 03 - Subjects  (curriculum maps and topic trees)
+03 - Subjects/*
+!03 - Subjects/.gitkeep
+
+# 04 - Concepts  (deep-dive concept notes)
+04 - Concepts/*
+!04 - Concepts/.gitkeep
+
+# 05 - Practice  (quizzes, flashcards, drills)
+05 - Practice/*
+!05 - Practice/.gitkeep
+
+# 06 - Plans  (revision schedules, exam prep)
+06 - Plans/*
+!06 - Plans/.gitkeep
+
+# 07 - Outputs  (generated summaries, reports)
+07 - Outputs/*
+!07 - Outputs/.gitkeep
+
+# 99 - Archive  (archived student content — all batches)
+# samples/ is tracked to showcase vault note formats for new users
+99 - Archive/*
+!99 - Archive/.gitkeep
+!99 - Archive/samples/

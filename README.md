@@ -46,9 +46,39 @@ Language:    Python 3.14+
 
 ## 📁 Vault Structure
 
-The workspace is organized into 10 canonical directories following a learning workflow.
+The workspace is organized into 10 canonical directories following a learning workflow:
 
-See the full vault structure in the repository folders.
+```
+Study_Agent/
+├── 00 - System/        # Governance, agent tools, FAISS index, learner state
+├── 01 - Inbox/         # Capture zone — student card, unsorted notes
+├── 02 - Sources/       # Primary learning materials
+├── 03 - Subjects/      # Curriculum maps & topic trees
+├── 04 - Concepts/      # Deep-dive concept notes & learning modules
+├── 05 - Practice/      # Quizzes, flashcards, drills
+├── 06 - Plans/         # Revision schedules, exam prep plans
+├── 07 - Outputs/       # Generated summaries, reports
+├── 08 - Templates/     # Reusable note structures (tracked in git)
+└── 99 - Archive/
+    └── samples/        # ← Example notes showing the output format
+```
+
+> **Privacy:** Folders `01`–`07` and `99 - Archive/archived-*` are gitignored — your personal study content never leaves your machine. Only `08 - Templates`, `00 - System`, and `99 - Archive/samples/` are tracked.
+
+### 👀 Sample Notes
+
+Not sure what the agent produces? Browse real examples in [`99 - Archive/samples/`](99%20-%20Archive/samples/README.md):
+
+| Sample | Type | Subject |
+|--------|------|---------|
+| [Student Card](99%20-%20Archive/samples/01%20-%20Inbox/Student%20Card%20-%20Aarav%20Sharma.md) | `student-card` | Profile auto-generated on first run |
+| [NCERT Economics Ch.4](99%20-%20Archive/samples/02%20-%20Sources/NCERT%20Economics%20Class%2011%20%E2%80%94%20Chapter%204%20Elasticity.md) | `source` | Textbook source note |
+| [Economics — Subject Map](99%20-%20Archive/samples/03%20-%20Subjects/Economics%20%E2%80%94%20Subject%20Map.md) | `subject-map` | Curriculum map with Mermaid topic tree |
+| [Price Elasticity of Demand](99%20-%20Archive/samples/04%20-%20Concepts/Price%20Elasticity%20of%20Demand.md) | `concept` | Full Learning Module — Hook → Exam Corner → Self-Check |
+| [A Photograph — Shirley Toulson](99%20-%20Archive/samples/04%20-%20Concepts/A%20Photograph%20%E2%80%94%20Shirley%20Toulson.md) | `learning-module` | English poetry module |
+| [PED Practice](99%20-%20Archive/samples/05%20-%20Practice/Price%20Elasticity%20of%20Demand%20%E2%80%94%20Practice.md) | `practice` | MCQ + short/long answer + answer key |
+| [A Photograph — Practice](99%20-%20Archive/samples/05%20-%20Practice/A%20Photograph%20%E2%80%94%20Practice%20Questions.md) | `practice` | Poetry extract + comprehension questions |
+| [Economics — Revision Plan](99%20-%20Archive/samples/06%20-%20Plans/Economics%20%E2%80%94%20Revision%20Plan.md) | `revision-plan` | 4-week schedule with priority matrix |
 
 ## 🚀 Quick Start
 

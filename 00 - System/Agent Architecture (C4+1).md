@@ -1,6 +1,6 @@
 ---
 title: "Agent Architecture (C4+1)"
-date: 2026-03-21
+date: 2026-03-22
 tags:
   - architecture
   - system
@@ -14,7 +14,7 @@ generated_by: copilot
 
 > **Model:** C4 + Scenarios view
 > **Scope:** Study Agent System — all agents, stores, data flows, and write gates
-> **Last updated:** 2026-03-21
+> **Last updated:** 2026-03-22
 
 ---
 
@@ -22,13 +22,14 @@ generated_by: copilot
 
 The Study Agent System is a multi-agent AI learning infrastructure built on Obsidian. It is designed as pedagogically-rigorous learning infrastructure — not a general-purpose chatbot — to help students achieve mastery through structured, repeatable study workflows.
 
-The system orchestrates specialist agents (teaching, practice, fact-checking, compliance, profile, vault search, web search, indexing, and note writing) via a Copilot CLI specification (`study.agent.md`). Every persistent learning artifact is written to an Obsidian vault as a Markdown note with YAML frontmatter, making all outputs human-readable, inspectable, and linkable inside the student's knowledge graph.
+The system orchestrates specialist agents (teaching, practice, fact-checking, compliance, profile, vault search, web search, indexing, and note writing) via a Copilot CLI specification (`study.agent.md`). The **Copilot CLI agent is the LLM** — Python tools are pure data fetchers and gate keepers. The LLM acts as the **Master Elaborator**, transforming raw tool output into rich, structured Learning Modules, and as the **Socratic Tutor**, guiding students to understanding through probing questions rather than direct answers. Every persistent learning artifact is written to an Obsidian vault as a Markdown note with YAML frontmatter, making all outputs human-readable, inspectable, and linkable inside the student's knowledge graph.
 
-Three binding constraints govern the architecture:
+Four binding constraints govern the architecture:
 
-- **Vault Constitution** — 21 rules defining note standards, metadata doctrine, and write governance
+- **Vault Constitution v1.2** — governing rules defining note standards, metadata doctrine, write governance, educational behaviour, and Obsidian-native linking
 - **Sequential write-gate pipeline** — fact-check (Gate 1) then compliance (Gate 2) then write; fail-fast, no skipping
 - **Single write endpoint** — `note_writer_agent.py` enforces both gates at code level; no agent or developer may bypass it
+- **Obsidian wikilink standard** — all internal vault references use `[[wikilink]]` syntax (§V rule 8); source traceability requires `[Title](URL)` for web and `[[note]]` for vault references (§X rule 6)
 
 ---
 
@@ -98,7 +99,7 @@ graph LR
 graph TB
     subgraph SAS["Study Agent System"]
         subgraph ORCH["Orchestration Layer"]
-            SAMD["study.agent.md<br/>17 tools · routing rules<br/>write gates · pedagogy rules"]
+            SAMD["study.agent.md<br/>17+ tools · routing rules<br/>Master Elaborator · Socratic Tutor<br/>write gates · pedagogy rules"]
         end
 
         subgraph PY["Python Runtime (.agent/venv/)"]
@@ -127,7 +128,7 @@ graph TB
 
 | Container | Technology | Responsibility |
 |-----------|-----------|----------------|
-| **Orchestration Layer** | `study.agent.md` (Copilot CLI spec) | Routes student intent to tools; enforces pedagogy and gate rules |
+| **Orchestration Layer** | `study.agent.md` (Copilot CLI spec) | Routes student intent to tools; the CLI agent IS the LLM — acts as Master Elaborator (transforms raw tool JSON into Learning Modules) and Socratic Tutor; enforces pedagogy and gate rules |
 | **Python Runtime** | Python 3.9+, venv at `.agent/venv/` | Executes all agents and stores |
 | **FAISS Index** | FAISS flat index + `metadata.jsonl` | Semantic search over 500+ vault passages |
 | **State Files** | JSON / JSONL in `.agent/state/` | Learner profile, mastery, revision queue, exam calendar |
@@ -148,12 +149,13 @@ flowchart TD
     Q --> CT
     CT -- "simple_lookup" --> VS1["vault_search_agent.py"]
     CT -- "research" --> VS2["vault_search_agent.py<br/>+ web_search_agent.py"]
-    CT -- "note_creation" --> GEN["teach_concept<br/>OR practice_agent.py<br/>→ note_content"]
+    CT -- "note_creation" --> GEN["teach_concept<br/>OR practice_agent.py<br/>→ raw JSON + raw_content[]"]
 
     VS1 --> R1(["Respond to student<br/>read-only flow"])
     VS2 --> R2(["Respond to student<br/>read-only flow"])
 
-    GEN --> G1{"GATE 1<br/>fact_checker_agent.py<br/>contradiction_check.py"}
+    GEN --> ELAB["LLM Master Elaborator<br/>raw_content[] → Learning Module<br/>Hook · Concept Map · Layered Explanation<br/>Examples · Analogy · Exam Corner · Self-Check"]
+    ELAB --> G1{"GATE 1<br/>fact_checker_agent.py<br/>contradiction_check.py"}
     G1 -- "FAIL" --> REJ1(["Reject<br/>report conflict to student"])
     G1 -- "PASS" --> G2{"GATE 2<br/>compliance_agent.py<br/>10 Constitution checks"}
     G2 -- "FAIL" --> REJ2(["Return violations<br/>fix and re-run"])
@@ -182,7 +184,7 @@ flowchart TD
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| **Teaching Agent** | `teaching_agent.py` | Level-adapted concept explanation; adapts to grade + learning_style; vault-first with web fallback at threshold 0.6 |
+| **Teaching Agent** | `teaching_agent.py` | Level-adapted concept explanation; adapts to grade + learning_style; vault-first with web fallback at threshold 0.6; returns `raw_content[]` (full unprocessed vault/web chunks) for LLM elaboration alongside `explanation`, `examples`, `key_points`, `exam_tips` |
 | **Practice Agent** | `practice_agent.py` | Generates 5 question types (MCQ, short_answer, long_answer, fill_blank, true_false); board-aware marking scheme |
 | **Marking Scheme Store** | `marking_scheme_store.py` | Single source of truth for marking rules across CBSE, ICSE, IB, Cambridge, Generic |
 
@@ -192,13 +194,13 @@ flowchart TD
 |-----------|------|------|----------------|
 | **Fact Checker** | `fact_checker_agent.py` | Gate 1 | `pass: true` — no vault contradictions (negation, numeric mismatch) |
 | **Contradiction Check** | `contradiction_check.py` | Gate 1 (sub) | CLEAR or REVIEW verdict; CONFLICT fails Gate 1 |
-| **Compliance Agent** | `compliance_agent.py` | Gate 2 | `status: PASS` — all 10 Constitution checks pass |
+| **Compliance Agent** | `compliance_agent.py` | Gate 2 | `status: PASS` — all 10 Constitution checks pass; valid types include `learning-module` (added 2026-03-22) |
 
 #### Vault Write
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| **Note Writer Agent** | `note_writer_agent.py` | Only vault write endpoint; validates both gates internally; routes by note_type |
+| **Note Writer Agent** | `note_writer_agent.py` | Only vault write endpoint; validates both gates internally; routes by note_type — `concept` + `learning-module` → `04 - Concepts`, `practice` → `05 - Practice`, `revision-plan` + `exam` → `06 - Plans` |
 | **Create Note** | `create_note.py` + `create_note_stdin.ps1` | Atomic file creation via PowerShell |
 | **Vault Indexer** | `index_vault.py` | Rebuilds FAISS index from all vault markdown; runs post-write |
 
@@ -256,7 +258,7 @@ flowchart TD
     VFC -- "fail" --> E2(["exit 2 — Gate 1 not passed"])
     VFC -- "ok" --> VCC["validate_compliance<br/>status must be PASS"]
     VCC -- "fail" --> E3(["exit 3 — Gate 2 not passed"])
-    VCC -- "ok" --> RF["resolve_folder<br/>type to folder map<br/>concept→04 · practice→05"]
+    VCC -- "ok" --> RF["resolve_folder<br/>concept + learning-module→04<br/>practice→05 · revision-plan→06"]
     RF --> WN["write_note<br/>create_note_stdin.ps1"]
     WN -- "fail" --> E4(["exit 4 — note write failed"])
     WN -- "ok" --> IDX["index_vault.py<br/>rebuild FAISS index"]
@@ -308,6 +310,7 @@ flowchart TD
     COMP --> ET["exam_tips — board-specific"]
     COMP --> PED["pedagogy — next steps suggested"]
     COMP --> SRC["sources — vault refs + web URLs"]
+    COMP --> RC["raw_content[] — full unprocessed vault/web chunks<br/>primary material for LLM Master Elaborator"]
 ```
 
 ---
@@ -326,6 +329,7 @@ sequenceDiagram
     participant CT as classify_task.py
     participant VS as vault_search_agent.py
     participant TA as teaching_agent.py
+    participant LLM as LLM Master Elaborator<br/>(Copilot CLI agent)
 
     Student->>CT: "Explain photosynthesis"
     CT-->>CT: signals: explain → simple_lookup confidence 0.65
@@ -335,8 +339,11 @@ sequenceDiagram
     VS->>CT: 5 vault findings from 04 - Concepts/
     CT->>TA: vault_content + student profile
     TA-->>TA: Grade 11 → senior level, CBSE board
-    TA->>Student: explanation + examples + key_points + exam_tips
-    Note over Student,TA: Read-only flow — no vault write
+    TA->>LLM: explanation + examples + key_points + raw_content[]
+    LLM-->>LLM: Master Elaborator activates on raw_content[]
+    LLM-->>LLM: Produces Learning Module:<br/>Hook · Concept Map · Layered Explanation<br/>Examples · Analogy · Key Points · Exam Corner<br/>Self-Check · Further Questions
+    LLM->>Student: rich Learning Module with [[wikilinks]]
+    Note over Student,LLM: Read-only flow — no vault write
 ```
 
 ---
@@ -350,6 +357,7 @@ sequenceDiagram
     participant VS as vault_search_agent.py
     participant WS as web_search_agent.py
     participant TA as teaching_agent.py
+    participant LLM as LLM Master Elaborator<br/>(Copilot CLI agent)
     participant FC as fact_checker_agent.py
     participant CA as compliance_agent.py
     participant NW as note_writer_agent.py
@@ -361,18 +369,20 @@ sequenceDiagram
     VS->>WS: vault insufficient — web fallback triggered
     WS-->>WS: Tavily: osmosis CBSE class 11
     WS->>TA: 3 educational sources
-    TA-->>TA: compose note_content with frontmatter
-    TA->>FC: claims extracted from note
+    TA-->>TA: compose raw_content[] + explanation + key_points
+    TA->>LLM: raw_content[] + extracted fields
+    LLM-->>LLM: Master Elaborator produces Learning Module<br/>type: learning-module · [[wikilinks]] · [Title](URL) sources
+    LLM->>FC: Learning Module content + claims
     Note over FC: GATE 1
     FC-->>FC: contradiction_check k=8 chunks
     FC-->>FC: verdict CLEAR — pass true
     FC->>CA: fact_check_result
     Note over CA: GATE 2
     CA-->>CA: 10 checks: frontmatter type H1 generated_by all pass
-    CA-->>CA: status PASS
+    CA-->>CA: learning-module is valid type (§XI) — status PASS
     CA->>NW: compliance_result
     NW-->>NW: both gates verified internally
-    NW-->>NW: create_note_stdin.ps1 → 04 - Concepts/Osmosis.md
+    NW-->>NW: learning-module → 04 - Concepts/Osmosis.md
     NW-->>NW: index_vault.py re-indexes
     NW->>Student: path 04 - Concepts/Osmosis.md indexed true
 ```
@@ -458,6 +468,9 @@ sequenceDiagram
 | **AD-8** | State in JSON/JSONL, not a database | Obsidian-first philosophy: all learner state lives inside the vault and is human-readable |
 | **AD-9** | FAISS flat index (no IVF/HNSW) | Vault size below 10,000 passages makes exact search faster than approximate; no training step |
 | **AD-10** | all-MiniLM-L6-v2 cached locally | No network dependency at inference time; works fully offline |
+| **AD-11** | Copilot CLI agent IS the LLM elaboration layer | Python tools are pure data fetchers; the LLM (Copilot CLI) does all generative work; no new Python LLM API services needed — just prompt engineering in `study.agent.md` |
+| **AD-12** | `[[wikilinks]]` required for all internal vault references (§V rule 8) | Obsidian builds its knowledge graph from wikilinks; without them, notes are isolated islands rather than a connected second brain |
+| **AD-13** | `[Title](URL)` required for web sources; `[[note]]` for vault (§X rule 6) | Full source traceability — every claim traceable to its origin; `<br/>` required in Mermaid node labels (Obsidian does not support `\n` escape in diagram labels) |
 
 ---
 
@@ -474,9 +487,11 @@ flowchart TD
     CT -- "note_creation" --> NG["teach_concept<br/>OR practice_agent.py"]
 
     VS & WS --> RO{"read-only<br/>response?"}
-    RO -- "yes" --> RESP(["Respond directly to student"])
+    RO -- "yes" --> ELAB1["LLM Master Elaborator<br/>raw_content[] → Learning Module"]
+    ELAB1 --> RESP(["Respond directly to student"])
 
-    NG --> G1["fact_checker_agent.py<br/>Gate 1"]
+    NG --> ELAB2["LLM Master Elaborator<br/>raw_content[] → Learning Module<br/>type: learning-module · [[wikilinks]]"]
+    ELAB2 --> G1["fact_checker_agent.py<br/>Gate 1"]
     G1 -- "FAIL" --> STOP(["Stop — report conflict to student"])
     G1 -- "PASS" --> G2["compliance_agent.py<br/>Gate 2"]
     G2 -- "FAIL" --> FIX(["Fix violations — re-run Gate 2"])
@@ -486,4 +501,4 @@ flowchart TD
 
 ---
 
-*Generated by Copilot — Study Agent System, 2026-03-21*
+*Generated by Copilot — Study Agent System, 2026-03-22*

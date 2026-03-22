@@ -50,16 +50,17 @@ from paths import (
 
 # Maps note type → absolute vault folder path (§XI valid types)
 _TYPE_FOLDER_MAP = {
-    "source":        SOURCES_DIR,
-    "subject-map":   SUBJECTS_DIR,
-    "topic":         SUBJECTS_DIR,
-    "concept":       CONCEPTS_DIR,
-    "practice":      PRACTICE_DIR,
-    "review":        PRACTICE_DIR,
-    "revision-plan": PLANS_DIR,
-    "exam":          PLANS_DIR,
-    "output":        OUTPUTS_DIR,
-    "dashboard":     OUTPUTS_DIR,
+    "source":          SOURCES_DIR,
+    "subject-map":     SUBJECTS_DIR,
+    "topic":           SUBJECTS_DIR,
+    "concept":         CONCEPTS_DIR,
+    "learning-module": CONCEPTS_DIR,
+    "practice":        PRACTICE_DIR,
+    "review":          PRACTICE_DIR,
+    "revision-plan":   PLANS_DIR,
+    "exam":            PLANS_DIR,
+    "output":          OUTPUTS_DIR,
+    "dashboard":       OUTPUTS_DIR,
 }
 
 

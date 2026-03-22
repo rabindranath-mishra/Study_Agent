@@ -4,10 +4,16 @@ date: {{date}}
 tags:
   - concept
   - {{subject_tag}}
-note_type: concept
+type: concept
 subject: "{{subject}}"
 topic: "{{topic}}"
 grade: "{{grade}}"
+board: CBSE
+status: active
+generated_by: StudyAgent
+subject_map: "[[{{subject}} — Subject Map]]"
+prerequisites: []
+related: []
 ---
 
 # {{title}}
@@ -36,10 +42,13 @@ grade: "{{grade}}"
 
 {{exam_tips}}
 
-## Related Topics
+## Related Notes
 
-{{related_topics}}
+- Subject map: [[{{subject}} — Subject Map]]
+- Prerequisites: {{prerequisites}}
+- Related: {{related_topics}}
 
 ## Sources
 
+<!-- Format: [Title](URL) for web · [[Note Title]] for vault · Author, *Title*, Ch. N for textbooks -->
 {{sources}}

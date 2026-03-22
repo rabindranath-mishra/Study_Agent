@@ -3,8 +3,8 @@ type: system
 status: governing
 authored_by: human
 created: 2026-03-08
-updated: 2026-03-08
-version: 1.0
+updated: 2026-03-22
+version: 1.1
 ---
 
 # Student Study Vault Constitution
@@ -119,6 +119,7 @@ The student must feel that they are studying **in Obsidian**, not using a detach
 5. Notes, links, frontmatter, and generated study assets are first-class system objects.
 6. The student must be able to inspect the artifacts produced by the agent.
 7. The student must not be locked into opaque hidden state for core learning outputs.
+8. All internal vault references MUST use Obsidian `[[wikilink]]` syntax. Markdown-style `[text](path)` links are prohibited for internal note references. External URLs remain as plain text or markdown links.
 
 **Rule:** Chat is the interface. The vault is the memory.
 
@@ -185,6 +186,7 @@ The vault exists to accumulate durable learning assets.
 - Subject maps
 - Topic notes
 - Concept notes
+- Learning module notes
 - Practice notes
 - Review notes
 - Revision plans
@@ -218,6 +220,11 @@ The Student Study Agent must prefer trustworthy and inspectable sources.
 3. Preserve provenance when transforming source material.
 4. Do not silently collapse multiple sources into unsupported certainty.
 5. Generated educational content should remain faithful to the source scope.
+6. Every note citing sources must include fully traceable references:
+   - **Web sources**: `[Title](full URL)` — clickable, inspectable, navigable.
+   - **Vault source notes**: `[[Source Note Title]]` — wikilinked for backlink tracking.
+   - **Textbooks / offline material**: Author, *Title*, Chapter/Page — enough to locate the original.
+   - Bare plain-text URLs with no title, and untitled references, are prohibited.
 
 ---
 # XI. Note Type Standard
@@ -230,6 +237,7 @@ Each note must have a clear type.
 - `subject-map`
 - `topic`
 - `concept`
+- `learning-module`
 - `practice`
 - `review`
 - `revision-plan`
@@ -399,6 +407,7 @@ The Student Study Agent must behave like a learning system, not an answer vendin
 5. Update learner state after meaningful study events.
 6. Prioritize weak areas in revision.
 7. Build mastery, not dependency.
+8. Apply generative elaboration to retrieved content — do not pass raw tool output through verbatim as a teaching response.
 
 ## Prohibited Behaviors
 

@@ -39,14 +39,14 @@ from paths import VAULT_ROOT
 # ---------------------------------------------------------------------------
 
 VALID_TYPES = {
-    "source", "subject-map", "topic", "concept", "practice",
+    "source", "subject-map", "topic", "concept", "learning-module", "practice",
     "review", "revision-plan", "exam", "dashboard", "output",
     # system types (not student-facing but valid)
     "system", "system-map",
 }
 
 # Note types that require subject: field (§XII)
-SUBJECT_REQUIRED_TYPES = {"concept", "topic", "practice", "review", "source", "output", "exam"}
+SUBJECT_REQUIRED_TYPES = {"concept", "learning-module", "topic", "practice", "review", "source", "output", "exam"}
 
 # Annotation suffixes that violate §XII binding naming rule
 ANNOTATION_SUFFIXES = re.compile(

@@ -296,6 +296,28 @@ def _build_sources(vault_findings: list, web_findings: list) -> list:
     return sources
 
 
+def _collect_raw_content(vault_findings: list, web_findings: list) -> list:
+    """
+    Return full unprocessed text chunks from vault and web results.
+    These give the LLM-layer agent maximum material to elaborate from,
+    beyond the regex-extracted fragments in examples/key_points/exam_tips.
+    """
+    raw = []
+    for f in vault_findings[:6]:
+        excerpt = (f.get("excerpt") or f.get("content") or "").strip()
+        ref = f.get("rel_path") or f.get("file_path", "vault")
+        score = round(f.get("score", 0.0), 3)
+        if excerpt:
+            raw.append({"source": "vault", "ref": ref, "score": score, "text": excerpt})
+    for f in web_findings[:4]:
+        content = (f.get("content") or f.get("excerpt") or "").strip()
+        url = f.get("url", "")
+        title = f.get("title", "")
+        if content:
+            raw.append({"source": "web", "ref": url, "title": title, "text": content})
+    return raw
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -364,6 +386,7 @@ def main():
         },
         "suggested_practice": built["suggested_practice"],
         "sources":        _build_sources(vault_findings, web_findings),
+        "raw_content":    _collect_raw_content(vault_findings, web_findings),
         "vault_score":    round(vault_score, 3),
         "used_web":       used_web,
     }

@@ -4,13 +4,18 @@ date: {{date}}
 tags:
   - practice
   - {{subject_tag}}
-note_type: practice
+type: practice
 subject: "{{subject}}"
 topic: "{{topic}}"
 grade: "{{grade}}"
+board: CBSE
 difficulty: "{{difficulty}}"
 question_count: {{question_count}}
 estimated_time: "{{estimated_time}}"
+status: active
+generated_by: StudyAgent
+subject_map: "[[{{subject}} — Subject Map]]"
+related_concept: "[[{{topic}}]]"
 ---
 
 # {{title}}
@@ -58,3 +63,15 @@ estimated_time: "{{estimated_time}}"
 ## Topics Covered
 
 {{topics_covered}}
+
+---
+
+## Related Notes
+
+- [[{{subject}} — Subject Map]]
+- Concept: [[{{topic}}]]
+
+## Sources
+
+<!-- Format: [Title](URL) for web · [[Note Title]] for vault · Author, *Title*, Ch. N for textbooks -->
+{{sources}}

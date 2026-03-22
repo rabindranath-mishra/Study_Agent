@@ -2,6 +2,16 @@
 type: practice
 subject: English
 topic: A Photograph
+level: intermediate
+grade: "11"
+board: CBSE
+difficulty: intermediate
+question_count: 12
+estimated_time: "25 minutes"
+status: active
+generated_by: StudyAgent
+subject_map: "[[English — Subject Map]]"
+related_concept: "[[A Photograph — Shirley Toulson]]"
 tags:
   - english
   - poetry
@@ -10,9 +20,12 @@ tags:
   - cbse
   - practice
   - quiz
-generated_by: StudyAgent
 ---
 # A Photograph — Practice Questions
+
+> **Subject:** English | **Topic:** A Photograph — Shirley Toulson | **Difficulty:** Intermediate | **Time:** 25 minutes
+
+---
 
 ## Short Answer (2-3 marks)
 
@@ -52,3 +65,35 @@ generated_by: StudyAgent
 10. The two cousins are named ________ and ________. *(Betty, Dolly)*
 11. The poem is from the book ________. *(Hornbill)*
 12. The poem is written in ________ verse. *(free)*
+
+---
+
+## Answer Key
+
+| Q | Answer |
+|---|--------|
+| Q1 | Betty and Dolly are the poet's mother's cousins who appear in the old photograph at the beach. |
+| Q2 | Mother (age ~12), cousins Betty and Dolly, at the sea — uncle takes photo. |
+| Q3 | Her childhood appearance — hairstyle and how the cousins were dressed. |
+| Q4 | Grief carried so long it becomes familiar — paradox of effortful ease. |
+| Q5 | Three time frames: (1) Mother age 12 at beach, (2) Adult mother laughing at photo, (3) Present — mother dead, only silence remains. |
+| Q6 | Photograph = frozen time vs. flowing life; poet's only connection to her dead mother. |
+| Q7 | Metaphor |
+| Q8 | Paradox / Oxymoron |
+| Q9 | twelve |
+| Q10 | Betty, Dolly |
+| Q11 | Hornbill |
+| Q12 | free |
+
+---
+
+## Related Notes
+
+- [[English — Subject Map]]
+- **Concept note:** [[A Photograph — Shirley Toulson]]
+- **Sibling poems:** [[The Laburnum Top]] · [[Voice of the Rain]] · [[Childhood]]
+
+## Sources
+
+- NCERT, *Hornbill — English Core*, Class 11, Poem 1: "A Photograph" by Shirley Toulson
+- [[A Photograph — Shirley Toulson]]

@@ -17,6 +17,7 @@ Run with:
 import sys
 import os
 import json
+import io
 import unittest
 from pathlib import Path
 from datetime import datetime, date
@@ -603,6 +604,20 @@ class TestProfileAgent(unittest.TestCase):
 
 class TestProfileAgentCLI(unittest.TestCase):
     """Test command-line interface"""
+
+    def test_check_exists_outputs_json_with_legacy_encoding(self):
+        """The startup check produces parseable JSON even with cp1252 stdout."""
+        raw = io.BytesIO()
+        output = io.TextIOWrapper(raw, encoding="cp1252")
+        result = {"status": "success", "exists": True, "student_name": "José"}
+        with patch.object(sys, "argv", ["profile_agent.py", "--action", "check-exists"]), \
+             patch.object(sys, "stdout", output), \
+             patch.object(profile_agent.ProfileAgent, "run", return_value=result):
+            with self.assertRaises(SystemExit) as exit_info:
+                profile_agent.main()
+        output.flush()
+        self.assertEqual(exit_info.exception.code, 0)
+        self.assertEqual(json.loads(raw.getvalue().decode("cp1252")), result)
     
     def test_cli_help(self):
         """Test CLI help message"""
@@ -691,7 +706,7 @@ class TestStudentCard(unittest.TestCase):
 
     def test_h1_heading_contains_name(self):
         content = self.agent._build_student_card_content(self.full_profile)
-        assert "# 🎓 Priya Sharma" in content
+        assert "# Student Card - Priya Sharma" in content
 
     def test_board_grade_summary_line(self):
         content = self.agent._build_student_card_content(self.full_profile)
@@ -750,48 +765,95 @@ class TestStudentCard(unittest.TestCase):
         content = self.agent._build_student_card_content(self.full_profile)
         assert 'academic_year: "2025-2026"' in content
 
-    # ── write_student_card (mocked subprocess) ────────────────────────────────
-
-    def test_write_card_success(self):
-        success_json = json.dumps({"success": True, "path": "/vault/01 - Inbox/Student Card - Priya Sharma.md"})
+    def test_card_draft_requires_approval(self):
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout=success_json, stderr="", returncode=0)
             result = self.agent.write_student_card(self.full_profile)
+        assert result["status"] == "approval_required"
+        assert "# Student Card - Priya Sharma" in result["content"]
+        mock_run.assert_not_called()
+
+    def test_card_draft_passes_compliance(self):
+        from compliance_agent import run_compliance
+        content = self.agent._build_student_card_content(self.full_profile)
+        result = run_compliance("Student Card - Priya Sharma", content, "dashboard")
+        assert result["status"] == "PASS", result
+
+    def test_approved_card_uses_both_gates_then_writer(self):
+        responses = [
+            {"pass": True, "vault_verdict": "CLEAR"},
+            {"status": "PASS"},
+            {"path": "card.md", "indexed": True},
+        ]
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            mock_run.side_effect = [
+                MagicMock(stdout=json.dumps(r), stderr="", returncode=0) for r in responses
+            ]
+            result = self.agent.write_student_card(self.full_profile, approved=True)
         assert result["status"] == "success"
-        assert "path" in result
+        commands = [call.args[0] for call in mock_run.call_args_list]
+        assert [Path(cmd[1]).name for cmd in commands] == [
+            "fact_checker_agent.py", "compliance_agent.py", "note_writer_agent.py",
+        ]
+        assert inbox in commands[-1]
 
-    def test_write_card_failure(self):
-        fail_json = json.dumps({"success": False, "error": "Permission denied"})
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout=fail_json, stderr="", returncode=1)
-            result = self.agent.write_student_card(self.full_profile)
+    def test_failed_fact_check_stops_before_writing(self):
+        response = {"pass": False, "vault_verdict": "CONFLICT"}
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout=json.dumps(response), stderr="", returncode=0)
+            result = self.agent.write_student_card(self.full_profile, approved=True)
         assert result["status"] == "error"
+        assert mock_run.call_count == 1
 
-    def test_write_card_bad_json_returns_error(self):
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="not-json", stderr="ps error", returncode=1)
-            result = self.agent.write_student_card(self.full_profile)
+    def test_gate_error_verdict_does_not_pass(self):
+        response = {"pass": True, "vault_verdict": "ERROR"}
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout=json.dumps(response), stderr="", returncode=0)
+            result = self.agent.write_student_card(self.full_profile, approved=True)
         assert result["status"] == "error"
+        assert mock_run.call_count == 1
 
-    def test_write_card_calls_ps_script(self):
-        success_json = json.dumps({"success": True, "path": "/vault/inbox/card.md"})
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout=success_json, stderr="", returncode=0)
-            self.agent.write_student_card(self.full_profile)
-        called_cmd = mock_run.call_args[0][0]
-        # The PS write script must be invoked
-        from paths import PS_SCRIPT_CREATE_NOTE
-        assert any(PS_SCRIPT_CREATE_NOTE in str(a) or "powershell" in str(a).lower() for a in called_cmd)
+    def test_compliance_failure_stops_before_writing(self):
+        responses = [{"pass": True, "vault_verdict": "CLEAR"}, {"status": "FAIL"}]
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            mock_run.side_effect = [
+                MagicMock(stdout=json.dumps(r), stderr="", returncode=0) for r in responses
+            ]
+            result = self.agent.write_student_card(self.full_profile, approved=True)
+        assert result["status"] == "error"
+        assert mock_run.call_count == 2
 
-    def test_write_card_targets_inbox(self):
-        success_json = json.dumps({"success": True, "path": "/vault/inbox/card.md"})
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout=success_json, stderr="", returncode=0)
-            self.agent.write_student_card(self.full_profile)
-        called_cmd = mock_run.call_args[0][0]
-        # INBOX_DIR must appear in command
-        from paths import INBOX_DIR
-        assert INBOX_DIR in called_cmd
+    def test_index_failure_is_reported_as_partial(self):
+        responses = [
+            {"pass": True, "vault_verdict": "CLEAR"},
+            {"status": "PASS"},
+            {"path": "card.md", "indexed": False},
+        ]
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            mock_run.side_effect = [
+                MagicMock(stdout=json.dumps(r), stderr="", returncode=0) for r in responses
+            ]
+            result = self.agent.write_student_card(self.full_profile, approved=True)
+        assert result["status"] == "partial"
+        assert result["path"] == "card.md"
+
+    def test_existing_card_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as inbox, \
+             patch.object(profile_agent, "INBOX_DIR", inbox), \
+             patch("subprocess.run") as mock_run:
+            Path(inbox, "Student Card - Priya Sharma.md").touch()
+            result = self.agent.write_student_card(self.full_profile, approved=True)
+        assert result["status"] == "error"
+        mock_run.assert_not_called()
 
 
 def run_tests():

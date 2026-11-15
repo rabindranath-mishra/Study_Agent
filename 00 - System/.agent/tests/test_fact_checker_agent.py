@@ -20,6 +20,7 @@ TOOLS_DIR = TESTS_DIR.parent / "tools"
 sys.path.insert(0, str(TOOLS_DIR))
 
 import fact_checker_agent
+import contradiction_check
 from paths import PYTHON_EXE
 
 _UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
@@ -40,6 +41,42 @@ class TestVaultCheck:
         result = fact_checker_agent.vault_check([])
         assert result["claims_checked"] == 0
 
+    def test_numeric_punctuation_does_not_crash(self):
+        assert contradiction_check.check_numeric_mismatch(
+            "The correlation is 0.5.", "The value is 1,000."
+        ) == []
+
+    def test_numeric_unit_mismatch_still_detected_with_punctuation(self):
+        result = contradiction_check.check_numeric_mismatch(
+            "The size is 32 GB.", "The size is 64 GB."
+        )
+        assert len(result) == 1
+        assert result[0]["type"] == "numeric_mismatch"
+
+    def test_vault_error_is_not_a_pass(self, monkeypatch, capsys):
+        monkeypatch.setattr(
+            fact_checker_agent, "vault_check",
+            lambda claims: {"verdict": "ERROR", "error": "vault check failed"},
+        )
+        monkeypatch.setattr(sys, "argv", ["fact_checker_agent.py", "--claims", '["claim"]'])
+        with pytest.raises(SystemExit) as exc:
+            fact_checker_agent.main()
+        result = json.loads(capsys.readouterr().out)
+        assert exc.value.code == 2
+        assert result["pass"] is False
+        assert result["vault_verdict"] == "ERROR"
+        assert result["error"] == "vault check failed"
+
+    def test_missing_vault_verdict_is_not_a_pass(self, monkeypatch, capsys):
+        monkeypatch.setattr(fact_checker_agent, "vault_check", lambda claims: {})
+        monkeypatch.setattr(sys, "argv", ["fact_checker_agent.py", "--claims", '["claim"]'])
+        with pytest.raises(SystemExit) as exc:
+            fact_checker_agent.main()
+        result = json.loads(capsys.readouterr().out)
+        assert exc.value.code == 2
+        assert result["pass"] is False
+        assert result["vault_verdict"] == "ERROR"
+
 
 class TestRunTool:
 
@@ -48,6 +85,11 @@ class TestRunTool:
         cmd = [PYTHON_EXE, str(TOOLS_DIR / "classify_task.py"), "create a note"]
         result = fact_checker_agent.run_tool(cmd)
         assert isinstance(result, dict)
+
+    def test_nonzero_exit_with_json_is_an_error(self, monkeypatch):
+        result = subprocess.CompletedProcess(["tool"], 2, stdout="{}", stderr="tool failed")
+        monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: result)
+        assert fact_checker_agent.run_tool(["tool"])["error"] == "tool failed"
 
 
 # ── CLI subprocess tests — 2 calls total via class-scoped fixtures ────────────

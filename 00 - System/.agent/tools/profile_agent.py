@@ -27,11 +27,15 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 # Add tools directory to path
 TOOLS_DIR = Path(__file__).parent
 sys.path.insert(0, str(TOOLS_DIR))
 
-from paths import INBOX_DIR, PS_SCRIPT_CREATE_NOTE as _PS_WRITE, VAULT_ROOT
+from paths import INBOX_DIR
 
 # Import state stores
 try:
@@ -197,27 +201,8 @@ class ProfileAgent:
         print('• "Show my progress"')
         print()
 
-        # Write student card to inbox (non-fatal if it fails)
+        # Prepare a card for student review; writing requires explicit approval.
         card_result = self.write_student_card(profile_data)
-        if card_result["status"] == "success":
-            print(f"[OK] Student card created: {card_result['path']}")
-        else:
-            print(f"[WARNING] Could not write student card: {card_result.get('message', '')}", file=sys.stderr)
-
-        return {
-            "status": "success",
-            "message": "Profile created successfully",
-            "profile": profile_data,
-            "student_card": card_result,
-            "next_actions": ["add_exam", "start_learning"]
-        }
-
-        # Write student card to inbox (non-fatal if it fails)
-        card_result = self.write_student_card(profile_data)
-        if card_result["status"] == "success":
-            print(f"[OK] Student card created: {card_result['path']}")
-        else:
-            print(f"[WARNING] Could not write student card: {card_result.get('message', '')}", file=sys.stderr)
 
         return {
             "status": "success",
@@ -352,15 +337,15 @@ class ProfileAgent:
         print(f'"Explain {subject} basics"')
         print()
 
-        # Refresh student card
-        self.write_student_card(updated_profile)
+        card_result = self.write_student_card(updated_profile)
 
         return {
             "status": "success",
             "message": f"{subject} added successfully",
             "subject": subject,
             "difficulty": difficulty,
-            "all_subjects": subjects_list
+            "all_subjects": subjects_list,
+            "student_card": card_result,
         }
     
     def remove_subject(self, subject: str = None, confirm: bool = False, **kwargs) -> Dict[str, Any]:
@@ -438,15 +423,15 @@ class ProfileAgent:
         print(f"Your subjects now: {', '.join(subjects_list)}")
         print()
 
-        # Refresh student card
-        self.write_student_card(updated_profile)
+        card_result = self.write_student_card(updated_profile)
 
         return {
             "status": "success",
             "message": f"{subject} removed and archived",
             "subject": subject,
             "archived": True,
-            "remaining_subjects": subjects_list
+            "remaining_subjects": subjects_list,
+            "student_card": card_result,
         }
     
     def _archive_subject_state_files(self, subject: str) -> None:
@@ -459,62 +444,92 @@ class ProfileAgent:
     # STUDENT CARD (Obsidian note in 01 - Inbox)
     # ========================================================================
 
-    def write_student_card(self, profile: Optional[dict] = None) -> Dict[str, Any]:
+    def write_student_card(
+        self, profile: Optional[dict] = None, approved: bool = False
+    ) -> Dict[str, Any]:
         """
-        Create or overwrite the student card note in 01 - Inbox.
-
-        The card is the human-readable summary of the learner profile:
-        name, board, grade, subjects, preferences, goals.  It is written
-        every time the profile changes so Obsidian always reflects the
-        current state.
-
-        The file is always named:
-            Student Card - <FirstName LastName>.md
-        (safe characters only — spaces are kept, no slashes / colons).
-
-        Returns:
-            {status, path, message}
+        Prepare a student card or write an approved draft through both gates.
         """
         if profile is None:
             if not STORES_AVAILABLE:
                 return {"status": "error", "message": "Profile store not available."}
             profile = profile_store.get_profile()
 
+        if not profile:
+            return {"status": "error", "message": "No student profile found."}
         title = f"Student Card - {profile.get('student_name', 'Student')}"
         content = self._build_student_card_content(profile)
-
-        result = subprocess.run(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", _PS_WRITE,
-                "-VaultPath", VAULT_ROOT,
-                "-Title", title,
-                "-Content", content,
-                "-Folder", INBOX_DIR,
-            ],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-        )
-
-        try:
-            ps_result = json.loads(result.stdout)
-        except json.JSONDecodeError:
-            ps_result = {"success": False, "error": result.stderr.strip() or result.stdout.strip()}
-
-        if ps_result.get("success"):
+        if not approved:
             return {
-                "status": "success",
-                "path": ps_result.get("path", ""),
-                "message": f"Student card written to 01 - Inbox/{title}.md",
+                "status": "approval_required",
+                "message": "Review the student card before writing it.",
+                "title": title,
+                "content": content,
             }
-        return {
-            "status": "error",
-            "message": "Failed to write student card note.",
-            "detail": ps_result.get("error", ""),
-        }
+
+        if (Path(INBOX_DIR) / f"{title}.md").exists():
+            return {
+                "status": "error",
+                "message": "Student card already exists; an approved update is required.",
+            }
+
+        level = profile.get("current_level", {})
+        prefs = profile.get("preferences", {})
+        claims = [
+            f"{profile.get('student_name', 'Student')} is in grade {level.get('grade', '')} "
+            f"with board {level.get('board', '')}.",
+            "The student's subjects are " + ", ".join(
+                subject["name"] for subject in profile.get("subjects", [])
+            ) + ".",
+            f"The student's daily study time is {prefs.get('study_time_daily_hours', 2.0)} "
+            f"hours and learning style is {prefs.get('learning_style', 'balanced')}.",
+        ]
+
+        def run_tool(script: str, *args: str) -> tuple[dict, str]:
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(TOOLS_DIR / script), *args],
+                    capture_output=True, text=True, encoding="utf-8",
+                )
+            except OSError as exc:
+                return {}, f"Could not run {script}: {exc}"
+            try:
+                data = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                return {}, result.stderr.strip() or result.stdout.strip() or (
+                    f"{script} exited with code {result.returncode} without JSON"
+                )
+            if not isinstance(data, dict):
+                return {}, f"{script} returned an invalid response"
+            if result.returncode:
+                return data, result.stderr.strip() or json.dumps(data, ensure_ascii=False)
+            return data, ""
+
+        facts, error = run_tool("fact_checker_agent.py", "--claims", json.dumps(claims))
+        if error or facts.get("pass") is not True or facts.get("vault_verdict") == "ERROR":
+            return {"status": "error", "message": "Student card fact check failed.",
+                    "detail": error or facts}
+        compliance, error = run_tool(
+            "compliance_agent.py", "--title", title, "--content", content,
+            "--note-type", "dashboard",
+        )
+        if error or compliance.get("status") != "PASS":
+            return {"status": "error", "message": "Student card compliance check failed.",
+                    "detail": error or compliance}
+        result, error = run_tool(
+            "note_writer_agent.py", "--title", title, "--content", content,
+            "--note-type", "dashboard", "--folder", INBOX_DIR,
+            "--fact-check-result", json.dumps(facts),
+            "--compliance-result", json.dumps(compliance),
+        )
+        if error or not result.get("path"):
+            return {"status": "error", "message": "Failed to write student card note.",
+                    "detail": error or result}
+        if not result.get("indexed"):
+            return {"status": "partial", "path": result["path"],
+                    "message": "Student card written, but vault indexing failed."}
+        return {"status": "success", "path": result["path"],
+                "message": f"Student card written to 01 - Inbox/{title}.md"}
 
     def _build_student_card_content(self, profile: dict) -> str:
         """Render the student card as Obsidian-compatible markdown with YAML frontmatter."""
@@ -543,7 +558,9 @@ class ProfileAgent:
 
         lines = [
             "---",
-            'title: "Student Card"',
+            "type: dashboard",
+            "generated_by: profile_agent",
+            f"title: {json.dumps('Student Card - ' + name, ensure_ascii=False)}",
             f"date: {today}",
             "tags:",
             "  - student-card",
@@ -562,7 +579,7 @@ class ProfileAgent:
             f"updated: {updated}",
             "---",
             "",
-            f"# 🎓 {name}",
+            f"# Student Card - {name}",
             "",
             f"> **Board:** {board} | **Grade:** {grade} | **Academic Year:** {acad_year}",
             "",
@@ -877,6 +894,7 @@ Examples:
                        choices=["beginner", "intermediate", "advanced"],
                        help="Subject difficulty level (default: intermediate)")
     parser.add_argument("--confirm", action="store_true", help="Confirm destructive action")
+    parser.add_argument("--approved", action="store_true", help="Approve the student card draft")
     
     # Exam management arguments
     parser.add_argument("--exam-name", help="Name of the exam")
@@ -895,7 +913,7 @@ Examples:
     action_args = {
         "check-exists": [],
         "view": [],
-        "write-card": [],
+        "write-card": ["approved"],
         "create": ["student_name", "grade", "board", "subjects", "study_time_daily_hours", "learning_style"],
         "update": ["student_name", "grade", "board", "subjects", "study_time_daily_hours", "learning_style"],
         "add-subject": ["subject", "difficulty"],
@@ -913,6 +931,7 @@ Examples:
         "subject": args.subject,
         "difficulty": args.difficulty,
         "confirm": args.confirm,
+        "approved": args.approved,
         "exam_name": args.exam_name,
         "exam_date": args.exam_date,
         "exam_type": args.exam_type,
@@ -927,11 +946,13 @@ Examples:
     result = agent.run(args.action, **kwargs)
     
     # Output result as JSON for programmatic use
-    print()
-    print("─" * 64)
-    print("RESULT:")
+    if args.action != "check-exists":
+        print()
+        print("─" * 64)
+        print("RESULT:")
     print(json.dumps(result, indent=2))
-    print("─" * 64)
+    if args.action != "check-exists":
+        print("─" * 64)
     
     # Exit with appropriate code
     if result.get("status") == "error":

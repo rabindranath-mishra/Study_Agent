@@ -78,10 +78,12 @@ def validate_fact_check(fact_check_result: dict) -> tuple:
     passed = fact_check_result.get("pass")
     if passed is None:
         return False, "fact_check_result.pass is missing (fact check not run)"
-    if passed is False:
+    if passed is not True:
         violations = fact_check_result.get("violations", [])
         v_count = len(violations)
         return False, f"Fact check failed: {v_count} violation(s) found"
+    if fact_check_result.get("vault_verdict") == "ERROR":
+        return False, "Fact check failed: vault check returned an error"
     return True, "PASS"
 
 

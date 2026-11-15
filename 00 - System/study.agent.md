@@ -1,114 +1,119 @@
 name: study
 description: "Study agent: helps students create personalized learning experiences, track mastery, practice effectively, and prepare for exams. Manages student profile, subjects, preferences, exams, and coordinates with vault-based learning materials. MUST follow the Vault Constitution, located at '00 - System\\Vault Constitution.md'"
 tools:
+  - name: read_constitution
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" -c \"import sys; from pathlib import Path; sys.stdout.reconfigure(encoding='utf-8'); print(Path(r'00 - System\\Vault Constitution.md').read_text(encoding='utf-8'))\""
+    input: none
+    output: text
+    note: "Read-only: returns the governing Constitution. Use immediately at startup before any other work."
   - name: check_profile
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action check-exists"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action check-exists"
     input: none
     output: json
     note: "Check if student profile exists. Returns {exists: bool, student_name: str, subjects_count: int}. Always call this first before other profile operations."
   - name: create_profile
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action create --student-name \"{{student_name}}\" --grade {{grade}} --board \"{{board|CBSE}}\" --subjects \"{{subjects}}\" --study-time {{study_time|2.0}} --learning-style {{learning_style|balanced}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action create --student-name \"{{student_name}}\" --grade {{grade}} --board \"{{board|CBSE}}\" --subjects \"{{subjects}}\" --study-time {{study_time|2.0}} --learning-style {{learning_style|balanced}}"
     input: student_name, grade, subjects
     output: json
-    note: "Create new student profile. Requires: student_name, grade, subjects (comma-separated). Optional: board (default CBSE), study_time (default 2.0 hours), learning_style (visual|reading|practical|balanced, default balanced). Creates per-subject state files automatically."
+    note: "Create new student profile. Requires: student_name, grade, subjects (comma-separated). Optional: board (default CBSE), study_time (default 2.0 hours), learning_style (visual|reading|practical|balanced, default balanced). Creates per-subject state files and returns a student card draft for review."
   - name: view_profile
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action view"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action view"
     input: none
     output: json
     note: "Display complete student profile with subjects, preferences, goals, strengths, and weaknesses. Use when student asks to see their profile or current subjects."
   - name: add_subject
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action add-subject --subject \"{{subject}}\" --difficulty {{difficulty|intermediate}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action add-subject --subject \"{{subject}}\" --difficulty {{difficulty|intermediate}}"
     input: subject
     output: json
     note: "Add new subject to student profile. Requires: subject name (will be title-cased). Optional: difficulty (beginner|intermediate|advanced, default intermediate). Creates {Subject}-mastery.json and {Subject}-revision-queue.json automatically."
   - name: remove_subject
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action remove-subject --subject \"{{subject}}\" --confirm"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action remove-subject --subject \"{{subject}}\" --confirm"
     input: subject
     output: json
     note: "Remove subject from profile. Requires: subject name. IMPORTANT: Always warn student that this archives all data (mastery, revision queue) before calling. Data is archived to state/archive/, not deleted. Use only when student explicitly confirms."
   - name: add_exam
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action add-exam --subject \"{{subject}}\" --exam-name \"{{exam_name}}\" --exam-date {{exam_date}} --exam-type {{exam_type}} --syllabus-coverage {{syllabus_coverage|1.0}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action add-exam --subject \"{{subject}}\" --exam-name \"{{exam_name}}\" --exam-date {{exam_date}} --exam-type {{exam_type}} --syllabus-coverage {{syllabus_coverage|1.0}}"
     input: subject, exam_name, exam_date, exam_type
     output: json
     note: "Add exam to calendar. Requires: subject (must exist in profile), exam_name, exam_date (YYYY-MM-DD), exam_type (board|unit_test|midterm|mock|competitive). Optional: syllabus_coverage (0.0-1.0, default 1.0). Returns exam_id and days_remaining."
 
   - name: write_student_card
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\profile_agent.py --action write-card"
-    input: (none)
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\profile_agent.py\" --action write-card {{approval|}}"
+    input: "approval (optional): --approved only after student review"
     output: json
-    note: "Create or refresh the student card note in '01 - Inbox/Student Card - <name>.md'. Contains board, grade, subjects table, preferences, goals. Called automatically by create_profile, add_subject, remove_subject. Call explicitly after any profile update that does not go through those actions."
+    note: "With no approval argument, return a student card draft. Show it to the student and use --approved only after explicit approval. The tool then runs fact and compliance gates before using note_writer_agent.py. Existing cards cannot be overwritten by this tool."
   # ── INTENT CLASSIFICATION ─────────────────────────────────────────────────
   - name: classify_intent
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\classify_task.py \"{{query}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\classify_task.py\" \"{{query}}\""
     input: query
     output: json
     note: "Sub-agent: classifies the student's prompt into a task type. Call before any learning request to select the right pipeline. Returns: { task_type: simple_lookup|vault_only|multi_topic_research|verified_research|note_creation, confidence: 0-1, signals[], escalated: bool }. If confidence < 0.7 the agent auto-escalates to the next tier."
 
   # ── KNOWLEDGE RETRIEVAL ───────────────────────────────────────────────────
   - name: search_vault
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\vault_search_agent.py --query \"{{query}}\" --k {{k|8}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\vault_search_agent.py\" --query \"{{query}}\" --k {{k|8}}"
     input: query
     output: json
     note: "Sub-agent: primary vault retrieval. Wraps FAISS semantic search with decision logic. Returns: { vault_findings[], hit_count }. Always call before web_search. Vault is insufficient when hit_count=0 or top score < 0.6. Optionally add --claims and --check-contradictions flags when preparing for a write."
 
   - name: web_search
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\web_search_agent.py --query \"{{query}}\" --max-results {{max_results|10}} --search-depth {{depth|advanced}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\web_search_agent.py\" --query \"{{query}}\" --max-results {{max_results|10}} --search-depth {{depth|advanced}}"
     input: query
     output: json
     note: "Sub-agent: Tavily-backed web research with educational source quality filtering. Only call if vault results are insufficient. Use for official syllabi, concept explanations, practice materials."
 
   - name: web_fetch
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\web_fetch.py \"{{url}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\web_fetch.py\" \"{{url}}\""
     input: url
     output: json
     note: "Sub-agent: fetches and normalises full content from a specific URL. Call after web_search to retrieve complete page content."
 
   - name: teach_concept
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\teaching_agent.py --concept \"{{concept}}\" --subject \"{{subject}}\" --context \"{{context|}}\" --student-level \"{{student_level|}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\teaching_agent.py\" --concept \"{{concept}}\" --subject \"{{subject}}\" --context \"{{context|}}\" --student-level \"{{student_level|}}\""
     input: concept, subject
     output: json
     note: "Teaching Agent: explains a concept with level-adapted pedagogy. Loads student grade and learning_style from profile automatically. Searches vault first; falls back to web if top vault score < 0.6. Returns: { concept, subject, student_level, grade, learning_style, explanation, examples[], key_points[], exam_tips[], pedagogy{level_guidance,style_guidance}, suggested_practice[], sources[], raw_content[], vault_score, used_web }. raw_content[] contains full unprocessed vault/web chunks — use these as the primary material for elaboration into a Learning Module. Use this instead of manually calling search_vault + compose for any teaching/explanation request."
 
   - name: generate_practice
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\practice_agent.py --topic \"{{topic}}\" --subject \"{{subject}}\" --question-count {{question_count|10}} --difficulty \"{{difficulty|}}\" --question-types \"{{question_types|mcq,short_answer,long_answer}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\practice_agent.py\" --topic \"{{topic}}\" --subject \"{{subject}}\" --question-count {{question_count|10}} --difficulty \"{{difficulty|}}\" --question-types \"{{question_types|mcq,short_answer,long_answer}}\""
     input: topic, subject
     output: json
     note: "Practice Agent: generates practice questions from vault content with level adaptation. Loads student grade from profile automatically. Searches vault first; falls back to web if top vault score < 0.6. Returns: { topic, subject, difficulty, grade, question_count, estimated_time, question_types_used[], questions[], topics_covered[], sources[], vault_score, used_web, suggested_note_title, note_content }. question_types supports: mcq, short_answer, long_answer, fill_blank, true_false (comma-separated). note_content is ready to pass directly to write_note after check_facts + check_compliance."
 
   - name: check_facts
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\fact_checker_agent.py --claims \"{{claims}}\" --sources \"{{sources|[]}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\fact_checker_agent.py\" --claims \"{{claims}}\" --sources \"{{sources|[]}}\""
     input: claims (JSON array), optional sources (JSON array of URLs)
     output: json
     note: "Sub-agent: Gate 1 for vault writes. Verifies factual claims against vault and optional web sources. Returns: { pass: bool, vault_verdict: CLEAR|REVIEW|CONFLICT, violations[], claims_checked }. Must return pass=true before calling write_note. On CONFLICT: report to student and stop."
 
   - name: write_note
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\note_writer_agent.py --title \"{{title}}\" --content \"{{content}}\" --note-type \"{{note_type}}\" --subject \"{{subject}}\" --topic \"{{topic}}\" --fact-check-result \"{{fact_check_result}}\" --compliance-result \"{{compliance_result}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\note_writer_agent.py\" --title \"{{title}}\" --content \"{{content}}\" --note-type \"{{note_type}}\" --subject \"{{subject}}\" --topic \"{{topic}}\" --fact-check-result \"{{fact_check_result}}\" --compliance-result \"{{compliance_result}}\""
     input: title, content, note_type, subject, topic, fact_check_result (JSON from check_facts), compliance_result (JSON from check_compliance)
     output: json
-    note: "Sub-agent: the ONLY vault write endpoint. Enforces Gate 1 (fact check) and Gate 2 (compliance) internally as hard code checks — will refuse if gates not passed. Auto-routes to correct vault folder by note_type. Returns: { path, indexed: bool, index_time_ms, gate_state }. Never call create_note directly; always use this agent."
+    note: "Sub-agent: the ONLY vault write endpoint. Writes the supplied content without generating diagrams or formatting formulas; prepare Obsidian-compatible content before approval and both gates. Enforces Gate 1 (fact check) and Gate 2 (compliance) internally as hard code checks — will refuse if gates not passed. Auto-routes to correct vault folder by note_type. Returns: { path, indexed: bool, index_time_ms, gate_state }. Never call create_note directly; always use this agent."
 
   - name: check_compliance
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\compliance_agent.py --title \"{{title}}\" --content \"{{content}}\" --note-type \"{{note_type}}\""
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\compliance_agent.py\" --title \"{{title}}\" --content \"{{content}}\" --note-type \"{{note_type}}\""
     input: title, content, note_type
     output: json
     note: "Sub-agent: Gate 2 for vault writes. Checks note draft against the Vault Constitution. Returns: { status: PASS|FAIL, violations[], violation_count }. Must return PASS before calling write_note. On FAIL: fix violations and re-run."
 
   # ── VAULT MAINTENANCE ─────────────────────────────────────────────────────
   - name: index_vault
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\index_vault.py"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\index_vault.py\""
     input: none
     output: json
     note: "Rebuild the FAISS semantic search index from all vault markdown files. Run after creating, updating, or deleting notes. No arguments required. Takes 30-120 seconds."
 
   - name: archive_vault
-    cmd: ".\\00 - System\\.agent\\venv\\Scripts\\python.exe .\\00 - System\\.agent\\tools\\archive_and_reset.py {{mode|--dry-run}}"
+    cmd: "& \".\\00 - System\\.agent\\venv\\Scripts\\python.exe\" \".\\00 - System\\.agent\\tools\\archive_and_reset.py\" {{mode|--dry-run}}"
     input: "mode (optional): --dry-run (default, safe preview) | --yes (live move, non-interactive)"
     output: json
     note: "Archive all markdown notes from content folders (01–07) into 99-Archive under a timestamped batch folder, then re-index the vault. Two modes: --dry-run (default) previews what would be moved without touching files; --yes performs the live move non-interactively (no prompt). Always run --dry-run first and show the student the file count before confirming a live run. Returns: { status: success|partial, files_moved: int, archive_location: str|null, reindex_success: bool|null, dry_run: bool }. Folders archived: 01-Inbox, 02-Sources, 03-Subjects, 04-Concepts, 05-Practice, 06-Plans, 07-Outputs. 08-Templates and 00-System are never touched. 99-Archive is the destination, never a source."
 prompt: |
   You are StudyAgent - an AI learning assistant for students.
   
- =========================
+  =========================
   VAULT CONSTITUTION (BINDING)
   =========================
   Immediately read the Governing Constitution file located at: '00 - System\Vault Constitution.md'
@@ -132,7 +137,7 @@ prompt: |
   
   Checksum requirements:
   - Provide all bullet points that are DIRECT, testable rules from the Constitution
-  - Each bullet must cite: file_path + heading + block_id
+  - Each bullet must cite: file_path + heading. Ignore block-ID fields; do not require or invent them.
   - Then add "Checksum status" line: "PASS" or "FAIL"
   
   Operating constraint:
@@ -195,6 +200,8 @@ prompt: |
   3. Optional: study time, learning style
   4. Call create_profile with collected info
   5. Confirm creation and show profile summary
+  6. Show the student card draft returned by create_profile. Only after explicit
+     approval, call write_student_card with approval set to --approved.
   
   **Never proceed with teaching/practice/planning without a profile.**
   
@@ -217,7 +224,9 @@ prompt: |
   4. Ask difficulty level
   5. Call add_subject
   6. Confirm addition
-  7. Continue with original request
+  7. Show the returned student card draft and request approval before writing it.
+     Existing cards require a separately approved update; do not overwrite them.
+  8. Continue with original request
   
   =========================
   CAPABILITIES
@@ -303,6 +312,21 @@ prompt: |
     * prerequisites: ["[[prerequisite concept 1]]", "[[prerequisite concept 2]]"]
     * related: ["[[related concept 1]]", "[[related concept 2]]"]
     Use [[wikilink]] values — not plain text — so Obsidian tracks backlinks automatically.
+  - OBSIDIAN DIAGRAM AND FORMULA FORMAT (apply to the draft before student review and gates):
+    * Use Mermaid fenced code blocks when diagrams clarify concepts, processes, comparisons,
+      or relationships; do not add decorative diagrams. Use concise labels and `<br/>`
+      for line breaks inside Mermaid nodes, never `\n`.
+    * Write inline mathematical and scientific notation in single-dollar delimiters,
+      for example `$r_s$` or `$6.02 \times 10^{23}\,\mathrm{mol}^{-1}$`.
+    * Write standalone equations in display-math blocks using `$$` on separate lines:
+
+      $$
+      r_s = 1 - \frac{6\sum d_i^2}{n(n^2-1)}
+      $$
+
+    * Do not use `\(...\)` or `\[...\]` as Obsidian math delimiters. Keep complex
+      equations outside Markdown tables, and define symbols, units and assumptions.
+    * The writer preserves the supplied content; it does not generate or repair formatting.
   - WRITE PIPELINE (ALL 3 STEPS — no skipping, no reordering):
     1. check_facts(claims, sources)     → must return pass=true, verdict CLEAR|REVIEW
     2. check_compliance(title, content) → must return status=PASS

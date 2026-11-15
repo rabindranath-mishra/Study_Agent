@@ -154,7 +154,11 @@ NEGATION_PATTERNS = [
     r"\b{kw}\b.{{0,40}}\bdiscontinued\b",
 ]
 
-NUMBER_RE = re.compile(r"(\d[\d,\.]*)\s*(gb|tb|mb|tflops|tops|ghz|mhz|w\b|cores?|bits?)?", re.IGNORECASE)
+NUMBER_RE = re.compile(
+    r"((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)"
+    r"\s*(gb|tb|mb|tflops|tops|ghz|mhz|w\b|cores?|bits?)?",
+    re.IGNORECASE,
+)
 
 
 def extract_keywords(claim: str) -> List[str]:

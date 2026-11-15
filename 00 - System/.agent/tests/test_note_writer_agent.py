@@ -45,6 +45,18 @@ class TestValidateFactCheck:
         assert ok is False
         assert "1 violation" in reason
 
+    def test_error_verdict_cannot_pass(self):
+        ok, reason = note_writer_agent.validate_fact_check(
+            {"pass": True, "vault_verdict": "ERROR"}
+        )
+        assert ok is False
+        assert "error" in reason
+
+    @pytest.mark.parametrize("value", ["true", 1, [], {}])
+    def test_non_boolean_pass_is_rejected(self, value):
+        ok, _ = note_writer_agent.validate_fact_check({"pass": value})
+        assert ok is False
+
     def test_missing_pass_key_fails(self):
         result = {"vault_verdict": "CLEAR"}
         ok, reason = note_writer_agent.validate_fact_check(result)

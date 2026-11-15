@@ -12,7 +12,7 @@ Output (matches shared_state.fact_check_results schema):
     "claims_checked": N,
     "pass": bool,
     "violations": [{ "claim": "...", "expected": "...", "found": "..." }],
-    "vault_verdict": "CLEAR|REVIEW|CONFLICT",
+    "vault_verdict": "CLEAR|REVIEW|CONFLICT|ERROR",
     "web_checked": bool
   }
 
@@ -35,11 +35,19 @@ TOOLS_DIR    = Path(__file__).parent
 
 
 def run_tool(cmd: list) -> dict:
-    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
     try:
-        return json.loads(result.stdout)
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+    except OSError as exc:
+        return {"error": str(exc)}
+    try:
+        data = json.loads(result.stdout)
     except json.JSONDecodeError:
         return {"error": result.stderr.strip() or f"Exit code {result.returncode}"}
+    if not isinstance(data, dict):
+        return {"error": "Tool returned a non-object JSON response"}
+    if result.returncode != 0 and "error" not in data:
+        data["error"] = result.stderr.strip() or f"Exit code {result.returncode}"
+    return data
 
 
 def vault_check(claims: List[str]) -> dict:
@@ -167,7 +175,19 @@ def main():
 
     # Step 1: Vault contradiction check
     vault_result = vault_check(claims)
-    vault_verdict = vault_result.get("verdict", "CLEAR")
+    vault_verdict = vault_result.get("verdict")
+    if (vault_verdict not in ("CLEAR", "REVIEW", "CONFLICT")
+            or (vault_verdict in ("CLEAR", "REVIEW") and vault_result.get("pass") is not True)):
+        result = {
+            "claims_checked": len(claims),
+            "pass": False,
+            "violations": [],
+            "vault_verdict": "ERROR",
+            "web_checked": False,
+            "error": vault_result.get("error", "Invalid vault contradiction-check result"),
+        }
+        print(json.dumps(result, ensure_ascii=True, indent=2))
+        sys.exit(2)
     vault_violations = vault_result.get("violations", [])
 
     # Step 2: Web source check (if source URLs provided)

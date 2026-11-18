@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Checks prerequisites, verifies the vault skeleton, creates the Python
-    virtual environment, installs dependencies, configures API keys, builds
-    the FAISS semantic index, and verifies the installation.
+    virtual environment, installs dependencies, configures and verifies API
+    keys, builds the FAISS semantic index, and verifies the installation.
 
     All paths are derived from the script location, so the vault can be
     cloned or moved anywhere.
@@ -297,14 +297,17 @@ if ($sarvamKey) {
     }
 }
 
-Write-Step "Checking Node.js (required only by sarvam-chat.mjs)..."
+# ── Step 8: Check Node.js and the Sarvam SDK ──────────────────────────────────
+Write-Step "Checking Node.js and the Sarvam SDK..."
 $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+$sarvamReady = $false
 if ($nodeCmd) {
     $nodeVersion = & node --version
     Write-OK "Node.js $nodeVersion detected"
     $npmRoot = & npm root -g 2>$null
     if ($npmRoot -and (Test-Path (Join-Path $npmRoot "sarvamai"))) {
         Write-OK "sarvamai SDK found in global npm modules"
+        $sarvamReady = $true
     } else {
         Write-Warn "sarvamai not installed globally. Run: npm install -g sarvamai"
     }
@@ -312,7 +315,50 @@ if ($nodeCmd) {
     Write-Warn "Node.js not found — sarvam-chat.mjs will not run (vault tools are unaffected)."
 }
 
-# ── Step 8: Build the FAISS index ─────────────────────────────────────────────
+# ── Step 9: Verify the Sarvam API key end to end ──────────────────────────────
+Write-Step "Verifying the Sarvam API key..."
+$sarvamChat = Join-Path $vaultRoot "sarvam-chat.mjs"
+if (-not $sarvamKey) {
+    Write-Warn "Skipped — SARVAM_API_KEY is not set."
+} elseif (-not $sarvamReady) {
+    Write-Warn "Skipped — Node.js or the sarvamai SDK is unavailable."
+} elseif (-not (Test-Path $sarvamChat)) {
+    Write-Warn "Skipped — sarvam-chat.mjs not found at $sarvamChat"
+} else {
+    # sarvam-chat.mjs loads .env from the vault root, so make sure the file
+    # exists and that the child process sees the key resolved above.
+    if (-not (Test-Path $envFile)) { New-Item -ItemType File -Path $envFile -Force | Out-Null }
+    $env:SARVAM_API_KEY = $sarvamKey
+
+    $probe = $null
+    $probeExit = 1
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    Push-Location $vaultRoot
+    try {
+        $probe = & node $sarvamChat 2>&1
+        $probeExit = $LASTEXITCODE
+    } catch {
+        $probe = $_.Exception.Message
+    } finally {
+        Pop-Location
+        $ErrorActionPreference = $prevEap
+    }
+
+    if ($probeExit -eq 0) {
+        Write-OK "Sarvam API key verified — model responded"
+    } else {
+        Write-Warn "Sarvam API key rejected. Response:"
+        $detail = @($probe) | Where-Object { "$_" -cmatch '\w*Error:' } | Select-Object -First 3
+        if (-not $detail) {
+            $detail = @($probe) | Where-Object { "$_".Trim() -ne "" } | Select-Object -First 3
+        }
+        $detail | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+        Write-Host "      Check the key at https://dashboard.sarvam.ai and update .env" -ForegroundColor DarkGray
+    }
+}
+
+# ── Step 10: Build the FAISS index ────────────────────────────────────────────
 Write-Step "Building FAISS semantic search index..."
 $indexFile = Join-Path $faissDir "index.faiss"
 if ($SkipIndex) {
@@ -330,7 +376,7 @@ if ($SkipIndex) {
     }
 }
 
-# ── Step 9: Verify installation ───────────────────────────────────────────────
+# ── Step 11: Verify installation ──────────────────────────────────────────────
 Write-Step "Verifying installation with a test query..."
 if ($modelPresent -and (Test-Path $indexFile)) {
     $testResult = & $python "$toolsDir\query_vault.py" "vault constitution" 1 2>$null
@@ -344,7 +390,7 @@ if ($modelPresent -and (Test-Path $indexFile)) {
     Write-Warn "Skipping verification — index not present."
 }
 
-# ── Step 10: Run the test suite ───────────────────────────────────────────────
+# ── Step 12: Run the test suite ───────────────────────────────────────────────
 Write-Step "Running the test suite..."
 if ($SkipTests) {
     Write-Warn "Skipped (-SkipTests)."

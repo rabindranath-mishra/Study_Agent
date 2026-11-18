@@ -79,9 +79,10 @@ Example:
 7. ✅ Configures `TAVILY_API_KEY` (optional, Windows user environment)
 8. ✅ Configures `SARVAM_API_KEY` in the vault-root `.env` (optional)
 9. ✅ Checks Node.js and the global `sarvamai` SDK (optional)
-10. ✅ Builds the FAISS index in `00 - System\.agent\faiss_store`
-11. ✅ Verifies semantic search with a test query
-12. ✅ Runs the pytest suite
+10. ✅ Verifies the Sarvam key end to end by running `sarvam-chat.mjs`
+11. ✅ Builds the FAISS index in `00 - System\.agent\faiss_store`
+12. ✅ Verifies semantic search with a test query
+13. ✅ Runs the pytest suite
 
 ### Expected output (abridged)
 
@@ -136,6 +137,9 @@ SARVAM_API_KEY=your-key-here
 npm install -g sarvamai
 node .\sarvam-chat.mjs
 ```
+
+The setup script runs this script as a verification step, so a rejected key is
+reported during setup rather than on first use.
 
 ---
 
@@ -309,6 +313,8 @@ The index is always rebuilt from scratch; `--rebuild` is accepted for clarity.
 - Confirm `.env` exists in the vault root and contains `SARVAM_API_KEY=...`
 - Install the SDK globally: `npm install -g sarvamai`
 - Check Node.js: `node --version`
+- A `ForbiddenError` means the key itself is wrong or expired — regenerate it
+  at <https://dashboard.sarvam.ai>
 
 ### PowerShell blocks the script
 

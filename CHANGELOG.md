@@ -20,9 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   19-tool agent model, added a Mermaid diagram of the classification →
   retrieval → gate pipeline, added a "Run the agent" step, and fixed the
   architecture-doc link
-- `setup_windows.ps1` rewritten: 10 idempotent steps, `-SkipIndex` / `-Reindex` /
+- `setup_windows.ps1` rewritten: 12 idempotent steps, `-SkipIndex` / `-Reindex` /
   `-SkipTests` / `-NonInteractive` switches, Study Agent branding, correct
-  `tools/requirements.txt` path, BOM-less `.env` writer, and a verification query
+  `tools/requirements.txt` path, BOM-less `.env` writer, a verification query,
+  and an end-to-end Sarvam key check via `sarvam-chat.mjs`
 - `SETUP.md` rewritten to match the actual tool CLIs, JSON schemas, and paths
 - `index_vault.py` now accepts `--rebuild`, `--vault`, `--persist`, `--model`,
   `--chunk-size`, `--chunk-overlap` (zero-argument invocation still works)

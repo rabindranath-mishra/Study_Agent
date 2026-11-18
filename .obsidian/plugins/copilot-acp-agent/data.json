@@ -4,7 +4,7 @@
   "port": 9000,
   "vaultPath": "D:\\Rabi\\GitHub\\Study_Agent\\",
   "openOnStartup": false,
-  "model": "",
+  "model": "sarvam/deepseekv4.1-flash-1017",
   "showSystemLogs": false,
   "extraCliArgs": "--yolo",
   "promptPrefixText": "Start as an agent as per the instructions in",

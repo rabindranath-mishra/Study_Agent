@@ -1064,7 +1064,7 @@ CopilotAcpAgentPlugin.DEFAULT_SETTINGS = {
   // Use the user's vault path you provided earlier:
   vaultPath: "C:\\GitViews\\ai_notes",
   openOnStartup: false,
-  model: "claude-sonnet-4.6",
+  model: "sarvam/deepseekv4.1-flash-1017",
   showSystemLogs: false,
   extraCliArgs: "",
   promptPrefixText: "",

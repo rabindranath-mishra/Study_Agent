@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "sarvamai": "^1.1.19"
-  }
+  "name": "study-agent",
+  "private": true,
+  "description": "Vault tooling scripts. The sarvamai SDK is resolved from the global npm install (npm install -g sarvamai); no local dependency is required."
 }

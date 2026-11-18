@@ -1,0 +1,11 @@
+# Binary assets — never apply text conversion.
+# The embedding model zip is committed directly (no Git LFS required).
+*.zip binary
+*.bin binary
+*.safetensors binary
+*.faiss binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary

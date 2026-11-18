@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('content', nargs='?', default=None, help='Markdown content for the note (or use --stdin)')
     parser.add_argument('--stdin', action='store_true', help='Read content from stdin (recommended for large content)')
     parser.add_argument('--filename-template', default='{title}.md', help='Filename template (format fields: date, title, slug)')
-    parser.add_argument('--folder', default='', help='Subfolder within vault (e.g., "03 - Research")')
+    parser.add_argument('--folder', default='', help='Subfolder within vault (e.g., "04 - Concepts")')
     args = parser.parse_args()
 
     # Get content from stdin if flag set, otherwise use positional argument

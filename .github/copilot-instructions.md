@@ -77,13 +77,14 @@ Study_Agent/
 ├── 00 - System/              # Governance & Infrastructure (SACRED)
 │   ├── .agent/               # Python agent tools & runtime
 │   │   ├── tools/            # Agent utilities (Python scripts)
-│   │   ├── index/            # FAISS semantic search index
+│   │   ├── faiss_store/      # FAISS semantic search index
+│   │   ├── models/           # Embedding model (all-MiniLM-L6-v2)
 │   │   ├── logs/             # Session logs (JSONL format)
 │   │   ├── state/            # Learner state (JSON format)
 │   │   ├── venv/             # Python virtual environment
-│   │   └── requirements.txt  # Python dependencies
+│   │   └── tools/requirements.txt  # Python dependencies
 │   ├── Vault Constitution.md          # 21 binding governance sections
-│   └── Study Agent Architecture.md    # System design documentation
+│   └── Agent Architecture (C4+1).md   # System design documentation
 │
 ├── 01 - Inbox/               # Capture zone (unsorted queries)
 ├── 02 - Sources/             # Primary learning materials
@@ -257,6 +258,7 @@ Answer: x = 0.5 or x = -3
 ```
 00 - System/.agent/tools/
 ├── __init__.py              # Package initialization
+├── paths.py                 # Vault-portable path constants
 ├── index_vault.py           # FAISS index builder
 ├── query_vault.py           # Semantic search
 ├── create_note.py           # Note creation utility
@@ -264,11 +266,19 @@ Answer: x = 0.5 or x = -3
 ├── fact_checker_agent.py    # Claim verification gate
 ├── compliance_agent.py      # Constitution validation
 ├── note_writer_agent.py     # Artifact generation
+├── contradiction_check.py   # Claim/vault conflict detection
 ├── web_search_agent.py      # Tavily integration
+├── web_fetch.py             # Full-page content normalisation
+├── teaching_agent.py        # Adaptive explanations
+├── practice_agent.py        # Quiz and drill generation
+├── profile_agent.py         # Student profile management
+├── learner_profile_store.py # Profile persistence
+├── marking_scheme_store.py  # Marking schemes and answer keys
+├── exam_calendar_store.py   # Exam dates and countdowns
+├── activity_log_store.py    # Session activity logging
+├── generate_presentation.py # HTML slide generation
 ├── archive_and_reset.py     # Vault maintenance
-├── classify_task.py         # Query routing
-├── config.py                # Configuration management
-└── utils.py                 # Shared utilities
+└── classify_task.py         # Query routing
 ```
 
 ### Code Style Guidelines
@@ -1031,7 +1041,7 @@ File: `00 - System/.agent/state/revision_queue.json`
 
 4. **Update documentation:**
    - Add to README.md agent tools table
-   - Document in Study Agent Architecture.md
+   - Document in Agent Architecture (C4+1).md
    - Update this file if adding new patterns
 
 ### Adding a New Note Type
@@ -1165,7 +1175,7 @@ def calculate_next_review(
 
 ### Internal Documentation
 - `00 - System/Vault Constitution.md` - 21 binding governance sections
-- `00 - System/Study Agent Architecture.md` - System design
+- `00 - System/Agent Architecture (C4+1).md` - System design
 - `.github/CONTRIBUTING.md` - Contribution guidelines
 - `.github/CHANGELOG.md` - Version history
 

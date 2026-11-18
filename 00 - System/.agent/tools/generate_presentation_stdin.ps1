@@ -16,12 +16,12 @@
     Override presentation title.
 
 .PARAMETER OutputDir
-    Output directory (default: 07 - Writing/presentations).
+    Output directory (default: 07 - Outputs/presentations).
 
 .EXAMPLE
-    .\generate_presentation_stdin.ps1 -Source "03 - Research\MRI Patient Preparation AI System Architecture.md"
+    .\generate_presentation_stdin.ps1 -Source "04 - Concepts\MRI Patient Preparation AI System Architecture.md"
     .\generate_presentation_stdin.ps1 -Source "-" -Content $markdownText -Title "My Talk"
-    .\generate_presentation_stdin.ps1 -VaultPath "D:\my-vault" -Source "03 - Research\MyNote.md"
+    .\generate_presentation_stdin.ps1 -VaultPath "D:\my-vault" -Source "04 - Concepts\MyNote.md"
 #>
 
 param(

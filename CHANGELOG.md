@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines
 - MIT License
 - .gitignore for Python, Obsidian, and sensitive files
+- `.gitattributes` — binary markers for model archives, FAISS index, and images
+
+### Changed
+- `README.md` corrected: replaced the aspirational 9-agent table with the real
+  19-tool agent model, added a Mermaid diagram of the classification →
+  retrieval → gate pipeline, added a "Run the agent" step, and fixed the
+  architecture-doc link
+- `setup_windows.ps1` rewritten: 10 idempotent steps, `-SkipIndex` / `-Reindex` /
+  `-SkipTests` / `-NonInteractive` switches, Study Agent branding, correct
+  `tools/requirements.txt` path, BOM-less `.env` writer, and a verification query
+- `SETUP.md` rewritten to match the actual tool CLIs, JSON schemas, and paths
+- `index_vault.py` now accepts `--rebuild`, `--vault`, `--persist`, `--model`,
+  `--chunk-size`, `--chunk-overlap` (zero-argument invocation still works)
+- `query_vault.py` now accepts `question [k]`, `--k`, `--persist`, `--model`;
+  fixes a crash when extra positional arguments were supplied
+- `generate_presentation.py` default output directory is now
+  `07 - Outputs/presentations` (was `07 - Writing/presentations`)
+- `create_note.py` `--folder` help example now references `04 - Concepts`
+- `CONTRIBUTING.md` and `.github/copilot-instructions.md` corrected: real tool
+  inventory, `faiss_store/` index location, `Agent Architecture (C4+1).md`
 
 ## [1.0.0] - 2026-03-20
 

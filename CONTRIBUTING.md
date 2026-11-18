@@ -94,7 +94,7 @@ Located in `08 - Templates/`
 
 ### 4. Agent Architecture
 
-Located in `00 - System/Study Agent Architecture.md`
+Located in `00 - System/Agent Architecture (C4+1).md`
 
 **Guidelines:**
 - Document changes to agent responsibilities

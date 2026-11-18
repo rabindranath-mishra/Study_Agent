@@ -16,21 +16,24 @@ This is **NOT** a general-purpose chatbot or answer vending machine. It's a **co
 
 ## 🏗️ Architecture
 
-### Multi-Agent System
+### Agent & Tool Model
 
-A **governed orchestrator system** with 9 specialist agents:
+The system ships **one governed agent definition** — [`00 - System/study.agent.md`](00%20-%20System/study.agent.md) —
+which exposes 19 tools. The Copilot CLI agent is the LLM; the Python tools are
+data fetchers and gate keepers. The agent acts as a **Master Elaborator**
+(turning raw tool output into structured Learning Modules) and a **Socratic
+Tutor** (guiding understanding through probing questions rather than answers).
 
-| Agent | Responsibility |
-|-------|---------------|
-| 🎯 **Orchestrator** | Interprets intent, routes to specialists, composes responses |
-| 📚 **Curriculum** | Subject structure, topic sequencing, prerequisites, exam alignment |
-| 🧠 **Knowledge** | Retrieves grounded content, facts, definitions, formulas |
-| 👨‍🏫 **Teaching** | Explains at appropriate depth, simplifies without distortion |
-| ✍️ **Practice** | Generates drills, quizzes, flashcards, adjusts difficulty |
-| 🔍 **Diagnostic** | Analyzes student errors, identifies misconceptions |
-| 📅 **Revision Planner** | Creates daily/countdown plans, prioritizes by weakness |
-| 💾 **Memory** | Tracks mastery, learning history, study state, revision queues |
-| 📄 **Output** | Formats notes, revision sheets, reports, study deliverables |
+| Capability | Tools |
+|------------|-------|
+| 🎯 **Governance** | `read_constitution` |
+| 👤 **Profile** | `check_profile`, `create_profile`, `view_profile`, `add_subject`, `remove_subject`, `add_exam`, `write_student_card` |
+| 🔀 **Routing** | `classify_intent` |
+| 🧠 **Knowledge** | `search_vault`, `web_search`, `web_fetch` |
+| 👨‍🏫 **Teaching** | `teach_concept` |
+| ✍️ **Practice** | `generate_practice` |
+| 🛡️ **Write gates** | `check_facts` → `check_compliance` → `write_note` |
+| 🔧 **Maintenance** | `index_vault`, `archive_vault` |
 
 ### Technology Stack
 
@@ -63,7 +66,7 @@ Study_Agent/
     └── samples/        # ← Example notes showing the output format
 ```
 
-> **Privacy:** Folders `01`–`07` and `99 - Archive/archived-*` are gitignored — your personal study content never leaves your machine. Only `08 - Templates`, `00 - System`, and `99 - Archive/samples/` are tracked.
+> **Privacy:** Folders `01`–`07` and `99 - Archive/archived-*` are gitignored — your personal study content never leaves your machine. Only `00 - System`, `08 - Templates`, `99 - Archive/samples/`, and the repository's own config files are tracked.
 
 ### 👀 Sample Notes
 
@@ -85,16 +88,63 @@ Not sure what the agent produces? Browse real examples in [`99 - Archive/samples
 ### Prerequisites
 
 - **Python 3.14+** installed
+- **GitHub Copilot CLI** installed and authenticated
 - **Obsidian** application installed
-- **Tavily API Key** (for web research)
+- **Tavily API Key** (optional — for web research)
 
 ### Installation
 
 **For detailed setup instructions, see [SETUP.md](SETUP.md)**
 
+The one-command path:
+
+```powershell
+& ".\00 - System\.agent\setup_windows.ps1"
+```
+
+This creates the venv, installs dependencies, extracts the embedding model,
+builds the FAISS index, and runs the test suite.
+
+### Run the agent
+
+**Terminal:**
+
+```powershell
+copilot agent run "00 - System\study.agent.md"
+```
+
+**Obsidian:** enable the **Copilot ACP Agent** plugin, set `vaultPath` to this
+vault and `promptPresetsText` to `study.agent.md`, then open the agent panel
+from the left ribbon.
+
 ## 🔄 Learning Flow
 
-The default learning loop involves 9 agents working together to support mastery-focused learning.
+Every request is classified first, then routed down one of three paths.
+
+```mermaid
+flowchart TD
+    S(["Student query"]) --> CT["classify_task.py<br/>intent classification"]
+
+    CT -->|"simple_lookup / vault_only"| VS["vault_search_agent.py"]
+    CT -->|"research"| WS["vault_search_agent.py<br/>+ web_search_agent.py"]
+    CT -->|"note_creation"| NG["teach_concept<br/>or practice_agent.py"]
+
+    VS --> ELAB1["LLM elaborates<br/>raw content → answer"]
+    WS --> ELAB1
+    ELAB1 --> RESP(["Answer to student<br/>vault untouched"])
+
+    NG --> ELAB2["LLM builds Learning Module<br/>type: learning-module · wikilinks"]
+    ELAB2 --> G1{"fact_checker_agent.py<br/>Gate 1"}
+    G1 -->|FAIL| STOP(["Stop — report conflict to student"])
+    G1 -->|PASS| G2{"compliance_agent.py<br/>Gate 2"}
+    G2 -->|FAIL| FIX["Fix violations"]
+    FIX --> G2
+    G2 -->|PASS| NW["note_writer_agent.py<br/>Gate 3"]
+    NW --> VAULT(["Vault .md written<br/>FAISS index updated"])
+```
+
+Read-only answers never touch the vault. Anything persistent must clear all
+three gates in order.
 
 ## 🛡️ Governance & Control
 
@@ -114,6 +164,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📚 Documentation
 
 - **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
+- **[00 - System/Agent Architecture (C4+1).md](00%20-%20System/Agent%20Architecture%20%28C4%2B1%29.md)** - System design
+- **[00 - System/Vault Constitution.md](00%20-%20System/Vault%20Constitution.md)** - Binding governance rules
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and updates
 

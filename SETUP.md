@@ -1,396 +1,373 @@
-# Setup Guide - Study Agent System
+# Setup Guide — Study Agent System
 
-Complete setup instructions for installing and configuring the Study Agent System.
+Complete setup instructions for installing and configuring the Study Agent vault.
+
+---
 
 ## Prerequisites
 
-### Required Software
+| Tool | Version | Required for |
+|------|---------|--------------|
+| [PowerShell](https://github.com/PowerShell/PowerShell/releases) | 7.5+ recommended (5.1 works) | Setup script |
+| [Python](https://www.python.org/downloads/) | 3.14+ | All vault tools |
+| [Git](https://git-scm.com/) | Any | Cloning / updating |
+| [Obsidian](https://obsidian.md/) | 1.4+ | Vault UI + agent panel |
+| [GitHub Copilot CLI](https://docs.github.com/en/copilot/github-copilot-in-the-cli) | Latest | Agent runtime |
+| [Node.js](https://nodejs.org/) | 20+ | Optional — `sarvam-chat.mjs` only |
 
-1. **Python 3.14 or later**
-   - Download from [python.org](https://www.python.org/downloads/)
-   - Verify installation: `python --version`
-   - Ensure pip is included: `pip --version`
+### API keys
 
-2. **Obsidian**
-   - Download from [obsidian.md](https://obsidian.md/)
-   - Version 1.4+ recommended
-   - Install on your platform (Windows, macOS, Linux)
+| Key | Required? | Used by |
+|-----|-----------|---------|
+| `TAVILY_API_KEY` | Optional | `web_search_agent.py` (web research) |
+| `SARVAM_API_KEY` | Optional | `sarvam-chat.mjs` (standalone chat script) |
 
-3. **Git** (optional, for cloning)
-   - Download from [git-scm.com](https://git-scm.com/)
-   - Verify installation: `git --version`
+The vault works fully offline without either key; only web research and the
+standalone Sarvam chat script are disabled.
 
-### API Keys
+> **No Git LFS required.** The embedding model is committed as
+> `00 - System/.agent/models/all-miniLM-L6-v2.zip` (≈83 MB) and extracted by
+> the setup script.
 
-4. **Tavily API Key** (for web research)
-   - Sign up at [tavily.com](https://tavily.com/)
-   - Free tier available for testing
-   - Note your API key for configuration
+---
 
-## Installation
+## 1. Get the repository
 
-### Step 1: Get the Repository
-
-**Option A: Clone with Git**
-```bash
-git clone https://github.com/yourusername/Study_Agent.git
+```powershell
+git clone https://github.com/rabindranath-mishra/Study_Agent.git
 cd Study_Agent
 ```
 
-**Option B: Download ZIP**
-1. Download ZIP from GitHub
-2. Extract to desired location
-3. Navigate to folder in terminal
+Downloading the ZIP from GitHub works too if you do not plan to contribute.
 
-### Step 2: Run Setup Script
+---
 
-**Windows:**
+## 2. Run setup
+
+From the vault root:
+
 ```powershell
-cd "00 - System\.agent"
-.\setup_windows.ps1
+& ".\00 - System\.agent\setup_windows.ps1"
 ```
 
-**macOS/Linux:**
-```bash
-cd "00 - System/.agent"
-chmod +x setup_unix.sh
-./setup_unix.sh
-```
+The script derives every path from its own location, so it also works when run
+from `00 - System\.agent`.
 
-The setup script will:
-- ✅ Verify Python 3.14+ installation
-- ✅ Extract embedding model from zip
-- ✅ Create Python virtual environment
-- ✅ Install all dependencies from requirements.txt
-- ✅ Convert PyTorch model to safetensors format
-- ✅ Build FAISS semantic search index
-- ✅ Run verification tests
+### Switches
 
-**Expected output:**
-```
-Checking Python version...
-✓ Python 3.14.1 found
+| Switch | Effect |
+|--------|--------|
+| `-SkipIndex` | Do not build the FAISS index |
+| `-Reindex` | Rebuild the index even if one already exists |
+| `-SkipTests` | Skip the pytest run |
+| `-NonInteractive` | Never prompt for API keys (CI / unattended runs) |
 
-Creating virtual environment...
-✓ Virtual environment created
+Example:
 
-Installing dependencies...
-✓ Dependencies installed
-
-Building FAISS index...
-✓ Index built successfully (1,234 passages indexed)
-
-Running verification...
-✓ All tests passed
-
-Setup complete!
-```
-
-### Step 3: Configure API Keys
-
-**Windows:**
 ```powershell
-# Temporary (current session only)
+& ".\00 - System\.agent\setup_windows.ps1" -Reindex -SkipTests
+```
+
+### What the script does
+
+1. ✅ Checks Python 3.14+
+2. ✅ Verifies the 10-folder vault skeleton and `00 - System\study.agent.md`
+3. ✅ Extracts the embedding model from `models\all-miniLM-L6-v2.zip`
+4. ✅ Creates `00 - System\.agent\venv`
+5. ✅ Installs `00 - System\.agent\tools\requirements.txt` plus `pytest`
+6. ✅ Converts `pytorch_model.bin` → `model.safetensors` when needed
+7. ✅ Configures `TAVILY_API_KEY` (optional, Windows user environment)
+8. ✅ Configures `SARVAM_API_KEY` in the vault-root `.env` (optional)
+9. ✅ Checks Node.js and the global `sarvamai` SDK (optional)
+10. ✅ Builds the FAISS index in `00 - System\.agent\faiss_store`
+11. ✅ Verifies semantic search with a test query
+12. ✅ Runs the pytest suite
+
+### Expected output (abridged)
+
+```
+▶  Checking Python...
+  ✅  Python 3.14.3 detected
+
+▶  Verifying vault skeleton...
+  ✅  All 10 vault folders present
+  ✅  Agent definition found: 00 - System\study.agent.md
+
+▶  Checking embedding model...
+  ✅  Embedding model already present at: ...\models\all-MiniLM-L6-v2
+
+▶  Building FAISS semantic search index...
+  ✅  Vault indexed successfully
+
+▶  Verifying installation with a test query...
+  ✅  Semantic search working — vault is queryable
+
+▶  Running the test suite...
+  ✅  All tests passed
+```
+
+---
+
+## 3. Configure API keys manually (optional)
+
+### Tavily (web research)
+
+```powershell
+# Current session only
 $env:TAVILY_API_KEY = "tvly-xxxxxxxxxxxxxxxxxxxxx"
 
-# Permanent (add to PowerShell profile)
-notepad $PROFILE
-# Add line: $env:TAVILY_API_KEY = "tvly-xxxxxxxxxxxxxxxxxxxxx"
+# Persistent (Windows user environment)
+[System.Environment]::SetEnvironmentVariable("TAVILY_API_KEY", "tvly-xxxxxxxxxxxxxxxxxxxxx", "User")
 ```
 
-**macOS/Linux:**
-```bash
-# Temporary (current session only)
-export TAVILY_API_KEY="tvly-xxxxxxxxxxxxxxxxxxxxx"
+Get a free key at <https://tavily.com>.
 
-# Permanent (add to .bashrc or .zshrc)
-echo 'export TAVILY_API_KEY="tvly-xxxxxxxxxxxxxxxxxxxxx"' >> ~/.bashrc
-source ~/.bashrc
+### Sarvam (standalone chat script)
+
+Create `.env` in the vault root:
+
+```dotenv
+SARVAM_API_KEY=your-key-here
 ```
 
-**Alternative: .env file**
-```bash
-cd "00 - System/.agent"
-echo "TAVILY_API_KEY=tvly-xxxxxxxxxxxxxxxxxxxxx" > .env
+`.env` is gitignored. `sarvam-chat.mjs` also needs the SDK:
+
+```powershell
+npm install -g sarvamai
+node .\sarvam-chat.mjs
 ```
 
-### Step 4: Open in Obsidian
+---
 
-1. Launch Obsidian
-2. Click "Open folder as vault"
-3. Navigate to `Study_Agent` folder
-4. Select folder and click "Open"
+## 4. Open in Obsidian
 
-**First-time setup in Obsidian:**
-- Trust the vault when prompted
-- Disable restricted mode if needed
-- Install community plugins (when Copilot plugin available)
+1. Launch Obsidian → **Open folder as vault** → select the `Study_Agent` folder.
+2. Trust the vault and disable Restricted Mode.
+3. Enable the **Copilot ACP Agent** community plugin.
+4. Configure it under **Settings → Copilot ACP Agent**:
 
-## Verification
-
-### Test Semantic Search
-
-```bash
-cd "00 - System/.agent"
-
-# Activate virtual environment
-# Windows:
-.\venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-# Test query
-python tools/query_vault.py "photosynthesis"
-```
-
-**Expected output:**
 ```json
 {
-  "results": [
-    {
-      "passage": "Photosynthesis is the process...",
-      "source": "04 - Concepts/Photosynthesis.md",
-      "score": 0.87
+  "copilotPath": "C:\\Users\\<you>\\AppData\\Roaming\\npm\\copilot.cmd",
+  "host": "127.0.0.1",
+  "port": 9000,
+  "vaultPath": "<absolute path to this vault>",
+  "openOnStartup": false,
+  "model": "<a model available to your Copilot CLI>",
+  "showSystemLogs": false,
+  "extraCliArgs": "--yolo",
+  "promptPrefixText": "Start as an agent as per the instructions in",
+  "promptPresetsText": "study.agent.md"
+}
+```
+
+> `copilotPath` and `vaultPath` are machine-specific. Do not commit your local
+> `data.json` if you customize it.
+
+---
+
+## 5. Verify the installation
+
+```powershell
+$py = ".\00 - System\.agent\venv\Scripts\python.exe"
+```
+
+### Semantic search
+
+```powershell
+& $py ".\00 - System\.agent\tools\query_vault.py" "photosynthesis" 3
+```
+
+Returns a JSON array. Each result has `score`, `text`, and `metadata`
+(`file_path`, `rel_path`, `heading`, `block_id`, `file_sha1`, `note_type`,
+`subject`, `topic`):
+
+```json
+[
+  {
+    "score": 0.63,
+    "text": "Photosynthesis is the process...",
+    "metadata": {
+      "file_path": "D:\\...\\04 - Concepts\\Photosynthesis.md",
+      "rel_path": "04 - Concepts\\Photosynthesis.md",
+      "heading": "Overview",
+      "block_id": null,
+      "file_sha1": "...",
+      "note_type": "concept",
+      "subject": "Biology",
+      "topic": "Photosynthesis"
     }
-  ]
-}
+  }
+]
 ```
 
-### Test Fact Checker
+### Fact checker (Gate 1)
 
-```bash
-python tools/fact_checker_agent.py "The Earth is flat"
+```powershell
+& $py ".\00 - System\.agent\tools\fact_checker_agent.py" --claims '["The Earth orbits the Sun"]'
 ```
 
-**Expected output:**
 ```json
 {
-  "status": "FAILED",
-  "reason": "Contradicts established scientific consensus",
-  "confidence": 1.0
+  "claims_checked": 1,
+  "pass": true,
+  "violations": [],
+  "vault_verdict": "CLEAR",
+  "web_checked": false
 }
 ```
 
-### Test Compliance
+### Compliance checker (Gate 2)
 
-```bash
-python tools/compliance_agent.py "04 - Concepts/Test.md"
+```powershell
+$content = @"
+---
+type: concept
+subject: Biology
+topic: Photosynthesis
+generated_by: study
+---
+
+# Photosynthesis
+
+Photosynthesis converts light energy into chemical energy.
+"@
+
+& $py ".\00 - System\.agent\tools\compliance_agent.py" --title "Photosynthesis" --content $content --note-type concept
 ```
 
-**Expected output:**
 ```json
 {
   "status": "PASS",
-  "issues": []
+  "violations": [],
+  "checks_run": 10,
+  "violation_count": 0
 }
 ```
 
-## Troubleshooting
+### Test suite
 
-### Common Issues
+```powershell
+& $py -m pytest ".\00 - System\.agent\tests" -q
+```
 
-#### 1. Python Version Too Old
+---
 
-**Error:** `Python 3.14+ required, found 3.12`
+## 6. Troubleshooting
 
-**Solution:**
-- Install Python 3.14+ from python.org
-- Update PATH to prioritize new Python version
-- Restart terminal/PowerShell
-- Verify: `python --version`
+### Python version too old
 
-#### 2. FAISS Installation Fails
+**Error:** `Python 3.14+ required`
 
-**Error:** `Could not install faiss-cpu`
+- Install Python 3.14+ from <https://python.org/downloads/>
+- Ensure the new interpreter is first on `PATH`
+- Restart the terminal and re-run setup
 
-**Solution:**
-- Ensure pip is up to date: `pip install --upgrade pip`
-- Try alternative: `conda install -c pytorch faiss-cpu`
-- On Windows, ensure Visual C++ Build Tools installed
+### FAISS installation fails
 
-#### 3. PyTorch Model Conversion Error
+- `& $py -m pip install --upgrade pip`
+- On Windows, install the Visual C++ Build Tools
+- Alternative: `conda install -c pytorch faiss-cpu`
 
-**Error:** `Safetensors conversion failed`
+### Embedding model not found
 
-**Solution:**
-- Ensure safetensors package installed: `pip install safetensors`
-- Check disk space (models ~500MB)
-- Try manual conversion:
-  ```bash
-  python -c "from safetensors.torch import save_file; import torch; ..."
-  ```
+The zip must be at:
 
-#### 4. Embedding Model Not Found
+```
+00 - System\.agent\models\all-miniLM-L6-v2.zip
+```
 
-**Error:** `Model zip file not found`
+It extracts to `00 - System\.agent\models\all-MiniLM-L6-v2\`. If extraction
+fails, unzip it manually and rename the extracted `all-MiniLM-L6-v2.pt` folder
+to `all-MiniLM-L6-v2`.
 
-**Solution:**
-- Check if `all-MiniLM-L6-v2.zip` exists in `00 - System/.agent/`
-- Re-download from releases
-- Extract manually if needed
+### Safetensors conversion fails
 
-#### 5. Tavily API Key Invalid
+```powershell
+& $py -m pip install --upgrade torch safetensors
+```
 
-**Error:** `401 Unauthorized - Invalid API key`
+Then re-run setup. PyTorch 2.6+ refuses to load `.bin` pickles by default, so
+`model.safetensors` is required.
 
-**Solution:**
-- Verify key copied correctly (no extra spaces)
-- Check key hasn't expired
-- Generate new key from tavily.com dashboard
-- Ensure environment variable set correctly
+### Rebuild the index
 
-#### 6. FAISS Index Build Fails
+```powershell
+& $py ".\00 - System\.agent\tools\index_vault.py" --rebuild
+```
 
-**Error:** `IndexError: list index out of range`
+The index is always rebuilt from scratch; `--rebuild` is accepted for clarity.
 
-**Solution:**
-- Ensure vault has some notes with content
-- Check notes have proper markdown format
-- Try rebuilding index:
-  ```bash
-  python tools/index_vault.py --rebuild
-  ```
+### Tavily returns 401
 
-### Platform-Specific Issues
+- Re-copy the key with no leading/trailing spaces
+- Confirm it starts with `tvly-`
+- Verify the variable is visible: `$env:TAVILY_API_KEY`
 
-#### Windows
+### `sarvam-chat.mjs` fails
 
-**PowerShell Execution Policy:**
+- Confirm `.env` exists in the vault root and contains `SARVAM_API_KEY=...`
+- Install the SDK globally: `npm install -g sarvamai`
+- Check Node.js: `node --version`
+
+### PowerShell blocks the script
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-**Long Path Support:**
+### Long paths on Windows
+
 ```powershell
 # Run as Administrator
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+  -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 ```
-
-#### macOS
-
-**Command Line Tools:**
-```bash
-xcode-select --install
-```
-
-**Rosetta 2 (Apple Silicon):**
-```bash
-# If needed for x86_64 dependencies
-softwareupdate --install-rosetta
-```
-
-#### Linux
-
-**Build Dependencies:**
-```bash
-sudo apt-get install python3-dev build-essential
-```
-
-**Virtual Environment Issues:**
-```bash
-sudo apt-get install python3-venv
-```
-
-## Advanced Configuration
-
-### Custom Index Settings
-
-Edit `00 - System/.agent/tools/index_vault.py`:
-
-```python
-# Adjust chunk size for longer passages
-CHUNK_SIZE = 1000  # Default: 500
-
-# Adjust overlap for better context
-CHUNK_OVERLAP = 200  # Default: 100
-
-# Exclude certain directories
-EXCLUDE_DIRS = ['99 - Archive', 'temp']
-```
-
-### GPU Acceleration (Optional)
-
-For faster embeddings with CUDA GPU:
-
-```bash
-pip uninstall torch
-pip install torch --index-url https://download.pytorch.org/whl/cu118
-pip uninstall faiss-cpu
-pip install faiss-gpu
-```
-
-Edit indexing scripts to use GPU device:
-```python
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-```
-
-### Logging Configuration
-
-Edit `00 - System/.agent/tools/config.py`:
-
-```python
-LOG_LEVEL = "INFO"  # Options: DEBUG, INFO, WARNING, ERROR
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-LOG_FILE = "logs/session_log.jsonl"
-```
-
-## Updating
-
-### Update Python Dependencies
-
-```bash
-cd "00 - System/.agent"
-source venv/bin/activate  # or .\venv\Scripts\activate on Windows
-pip install --upgrade -r requirements.txt
-```
-
-### Rebuild FAISS Index
-
-After adding many new notes:
-
-```bash
-python tools/index_vault.py --rebuild
-```
-
-### Update from Git
-
-```bash
-git pull origin main
-cd "00 - System/.agent"
-pip install -r requirements.txt --upgrade
-python tools/index_vault.py --rebuild
-```
-
-## Next Steps
-
-1. **Read the Documentation**
-   - [Vault Constitution](00%20-%20System/Vault%20Constitution.md)
-   - [Study Agent Architecture](00%20-%20System/Study%20Agent%20Architecture.md)
-
-2. **Create Your First Note**
-   ```bash
-   python tools/create_note.py --type concept --title "Photosynthesis" --subject Biology
-   ```
-
-3. **Start Learning**
-   - Open Obsidian
-   - Navigate to `01 - Inbox`
-   - Create a note with your study question
-   - Let the agents guide you!
-
-4. **Customize Templates**
-   - Edit templates in `08 - Templates/`
-   - Adjust to your learning style
-   - Add subject-specific sections
-
-## Getting Help
-
-- **Setup Issues:** Open issue on GitHub with setup log
-- **Usage Questions:** Check [README.md](README.md) and documentation
-- **Feature Requests:** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
-**Installation Time:** ~5-10 minutes  
-**Disk Space Required:** ~2GB (including models and dependencies)  
-**Internet Required:** Initial setup only (after that, works offline except web research)
+## 7. Updating
+
+```powershell
+git pull origin main
+& ".\00 - System\.agent\setup_windows.ps1" -Reindex
+```
+
+`-Reindex` reinstalls nothing that is already present; it refreshes the FAISS
+index so new notes become searchable.
+
+---
+
+## 8. Next steps
+
+1. **Read the governance documents**
+   - [Vault Constitution](00%20-%20System/Vault%20Constitution.md)
+   - [Agent Architecture (C4+1)](00%20-%20System/Agent%20Architecture%20%28C4%2B1%29.md)
+
+2. **Run the study agent**
+
+   ```powershell
+   copilot agent run "00 - System\study.agent.md"
+   ```
+
+   Or open the Copilot ACP Agent panel in Obsidian.
+
+3. **Create notes through the agent**
+
+   Vault notes must go through the three-gate pipeline:
+
+   ```
+   fact_checker_agent.py  →  compliance_agent.py  →  note_writer_agent.py
+   ```
+
+   Do not write vault markdown directly with `create_note.py` or an editor.
+
+4. **Customize templates**
+
+   Edit the files in `08 - Templates/` to match your learning style.
+
+---
+
+**Installation time:** ~5–10 minutes (plus ~2–3 minutes for the test suite)
+**Disk space:** ~2 GB (model + dependencies)
+**Internet:** Required for setup and web research; vault tools work offline afterwards.

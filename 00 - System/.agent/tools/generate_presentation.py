@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 generate_presentation.py — Generate self-contained offline HTML presentations (standalone deck, no framework).
 
@@ -10,7 +10,7 @@ All assets (CSS, images) are inlined. Works fully offline.
 
 Usage:
   python generate_presentation.py --source "path/to/note.md" --title "My Talk"
-  python generate_presentation.py --source "path/to/note.md" --output-dir "07 - Writing/Presentations"
+  python generate_presentation.py --source "path/to/note.md" --output-dir "07 - Outputs/presentations"
 
 Output JSON:
   {"success": true, "path": "...", "slide_count": 5, "file_size_kb": 210}
@@ -33,7 +33,7 @@ from typing import Optional
 from paths import VAULT_ROOT as _vault_root_str
 TOOLS_DIR          = Path(__file__).parent
 VAULT_ROOT         = Path(_vault_root_str)
-OUTPUT_DIR_NAME    = "07 - Writing/presentations"
+OUTPUT_DIR_NAME    = "07 - Outputs/presentations"
 
 # ---------------------------------------------------------------------------
 # Philips brand assets (base64-embedded, vault-contained)
@@ -694,7 +694,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate self-contained offline HTML presentation (custom standalone deck)")
     parser.add_argument("--source",     required=True, help="Path to source markdown/HTML, or '-' for stdin")
     parser.add_argument("--title",      default="",    help="Override presentation title")
-    parser.add_argument("--output-dir", default="",    help="Output directory (default: 07 - Writing/presentations)")
+    parser.add_argument("--output-dir", default="",    help="Output directory (default: 07 - Outputs/presentations)")
     parser.add_argument("--vault-path", default=str(VAULT_ROOT), help="Vault root path")
     args = parser.parse_args()
 

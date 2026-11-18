@@ -5,8 +5,10 @@ Loads index.faiss + metadata.jsonl and returns top-k passages as JSON.
 
 Usage:
  .\\"00 - System"\\.agent\\venv\\Scripts\\python.exe ".\\00 - System\\.agent\\tools\\query_vault.py" "your question" [k]
+ .\\"00 - System"\\.agent\\venv\\Scripts\\python.exe ".\\00 - System\\.agent\\tools\\query_vault.py" "your question" --k 3
 """
 
+import argparse
 import sys
 import json
 from pathlib import Path
@@ -31,16 +33,29 @@ def load_metadata_jsonl(path: Path) -> List[Dict]:
     return metas
 
 
-def main():
-    if len(sys.argv) < 2:
-        print('Usage: python query_vault.py "question" [k]')
-        sys.exit(1)
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Semantic search over the vault FAISS index."
+    )
+    parser.add_argument("question", help="Natural-language query")
+    parser.add_argument("k", nargs="?", type=int, default=None, help="Number of results (default 5)")
+    parser.add_argument("--k", dest="k_option", type=int, default=None, help="Number of results (default 5)")
+    parser.add_argument("--persist", default=FAISS_STORE, help="Directory containing index.faiss + metadata.jsonl.")
+    parser.add_argument("--model", default=MODEL_PATH, help="Sentence-transformers model directory.")
+    return parser.parse_args(argv)
 
-    question = sys.argv[1]
-    k = int(sys.argv[2]) if len(sys.argv) > 2 else 5
 
-    persist_dir = Path(FAISS_STORE)
-    model_path  = MODEL_PATH
+def main(argv=None):
+    args = parse_args(argv)
+
+    question = args.question
+    k = args.k_option if args.k_option is not None else (args.k if args.k is not None else 5)
+    if k < 1:
+        print(json.dumps({"error": "k must be >= 1"}))
+        sys.exit(2)
+
+    persist_dir = Path(args.persist)
+    model_path  = args.model
 
     index_path = persist_dir / "index.faiss"
     meta_path  = persist_dir / "metadata.jsonl"

@@ -8,9 +8,13 @@ LangChain-free Obsidian vault indexer (FAISS + sentence-transformers).
 - Saves FAISS index + metadata.jsonl (including passage text)     [G17]
 
 Usage (PowerShell):
- .\\"00 - System"\\.agent\\venv\\Scripts\\python.exe ".\\00 - System\\.agent\\tools\\index_vault.py"
+ .\\"00 - System"\\.agent\\venv\\Scripts\\python.exe ".\\00 - System\\.agent\\tools\\index_vault.py" [--rebuild]
+
+The index is always rebuilt from scratch; --rebuild is accepted for
+compatibility with the documented setup/update commands.
 """
 
+import argparse
 import sys
 import json
 import re
@@ -255,13 +259,32 @@ def save_index(persist_dir: Path, index: faiss.Index, passages: List[Dict], conf
         json.dump(config, f, indent=2)
 
 
-def main():
-    vault_path  = VAULT_ROOT
-    persist_dir = Path(FAISS_STORE)
-    model_path  = MODEL_PATH
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Build the FAISS semantic index for the vault."
+    )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Rebuild the index from scratch (this is always the behaviour).",
+    )
+    parser.add_argument("--vault", default=VAULT_ROOT, help="Vault root directory.")
+    parser.add_argument("--persist", default=FAISS_STORE, help="Directory for index.faiss + metadata.jsonl.")
+    parser.add_argument("--model", default=MODEL_PATH, help="Sentence-transformers model directory.")
+    parser.add_argument("--chunk-size", type=int, default=900, help="Chunk size in characters (default 900).")
+    parser.add_argument("--chunk-overlap", type=int, default=150, help="Chunk overlap in characters (default 150).")
+    return parser.parse_args(argv)
 
-    chunk_size    = 900
-    chunk_overlap = 150
+
+def main(argv=None):
+    args = parse_args(argv)
+
+    vault_path  = args.vault
+    persist_dir = Path(args.persist)
+    model_path  = args.model
+
+    chunk_size    = args.chunk_size
+    chunk_overlap = args.chunk_overlap
 
     print(f"Vault:           {vault_path}")
     print(f"Persist:         {persist_dir}")

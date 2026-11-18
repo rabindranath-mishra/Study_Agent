@@ -1,6 +1,6 @@
 ---
 title: "Agent Architecture (C4+1)"
-date: 2026-03-22
+date: 2026-11-18
 tags:
   - architecture
   - system
@@ -14,7 +14,7 @@ generated_by: copilot
 
 > **Model:** C4 + Scenarios view
 > **Scope:** Study Agent System — all agents, stores, data flows, and write gates
-> **Last updated:** 2026-03-22
+> **Last updated:** 2026-11-18
 
 ---
 
@@ -26,7 +26,7 @@ The system orchestrates specialist agents (teaching, practice, fact-checking, co
 
 Four binding constraints govern the architecture:
 
-- **Vault Constitution v1.2** — governing rules defining note standards, metadata doctrine, write governance, educational behaviour, and Obsidian-native linking
+- **Vault Constitution v1.1** — governing rules defining note standards, metadata doctrine, write governance, educational behaviour, and Obsidian-native linking
 - **Sequential write-gate pipeline** — fact-check (Gate 1) then compliance (Gate 2) then write; fail-fast, no skipping
 - **Single write endpoint** — `note_writer_agent.py` enforces both gates at code level; no agent or developer may bypass it
 - **Obsidian wikilink standard** — all internal vault references use `[[wikilink]]` syntax (§V rule 8); source traceability requires `[Title](URL)` for web and `[[note]]` for vault references (§X rule 6)
@@ -89,6 +89,8 @@ graph LR
 | **FAISS** | External Library | Local vector similarity search |
 | **PowerShell** | External Runtime | File system operations for vault writes |
 
+> **Out of scope:** `sarvam-chat.mjs` (Node.js + Sarvam AI API) is a standalone, optional chat script at the vault root. It is not part of the agent pipeline, does not read or write vault notes, and is not required for any agent workflow.
+
 ---
 
 ## Level 2 — Container Diagram
@@ -99,7 +101,7 @@ graph LR
 graph TB
     subgraph SAS["Study Agent System"]
         subgraph ORCH["Orchestration Layer"]
-            SAMD["study.agent.md<br/>17+ tools · routing rules<br/>Master Elaborator · Socratic Tutor<br/>write gates · pedagogy rules"]
+            SAMD["study.agent.md<br/>19 tools · routing rules<br/>Master Elaborator · Socratic Tutor<br/>write gates · pedagogy rules"]
         end
 
         subgraph PY["Python Runtime (.agent/venv/)"]
@@ -129,7 +131,7 @@ graph TB
 | Container | Technology | Responsibility |
 |-----------|-----------|----------------|
 | **Orchestration Layer** | `study.agent.md` (Copilot CLI spec) | Routes student intent to tools; the CLI agent IS the LLM — acts as Master Elaborator (transforms raw tool JSON into Learning Modules) and Socratic Tutor; enforces pedagogy and gate rules |
-| **Python Runtime** | Python 3.9+, venv at `.agent/venv/` | Executes all agents and stores |
+| **Python Runtime** | Python 3.14+, venv at `.agent/venv/` | Executes all agents and stores |
 | **FAISS Index** | FAISS flat index + `metadata.jsonl` | Semantic search over 500+ vault passages |
 | **State Files** | JSON / JSONL in `.agent/state/` | Learner profile, mastery, revision queue, exam calendar |
 | **Vault Markdown** | Markdown + YAML frontmatter | Persistent knowledge base (Obsidian-compatible) |
@@ -147,14 +149,14 @@ flowchart TD
     CT["classify_task.py<br/>5 task types · confidence scoring<br/>auto-escalate if confidence below 0.7"]
 
     Q --> CT
-    CT -- "simple_lookup" --> VS1["vault_search_agent.py"]
-    CT -- "research" --> VS2["vault_search_agent.py<br/>+ web_search_agent.py"]
-    CT -- "note_creation" --> GEN["teach_concept<br/>OR practice_agent.py<br/>→ raw JSON + raw_content[]"]
+    CT -- "simple_lookup / vault_only" --> VS1["vault_search_agent.py"]
+    CT -- "multi_topic_research / verified_research" --> VS2["vault_search_agent.py<br/>+ web_search_agent.py"]
+    CT -- "note_creation" --> GEN["teaching_agent.py<br/>→ raw_content[]<br/>OR practice_agent.py<br/>→ note_content"]
 
     VS1 --> R1(["Respond to student<br/>read-only flow"])
     VS2 --> R2(["Respond to student<br/>read-only flow"])
 
-    GEN --> ELAB["LLM Master Elaborator<br/>raw_content[] → Learning Module<br/>Hook · Concept Map · Layered Explanation<br/>Examples · Analogy · Exam Corner · Self-Check"]
+    GEN --> ELAB["LLM Master Elaborator<br/>raw_content[] → Learning Module<br/>note_content → practice note<br/>Hook · Concept Map · Layered Explanation<br/>Examples · Analogy · Exam Corner · Self-Check"]
     ELAB --> G1{"GATE 1<br/>fact_checker_agent.py<br/>contradiction_check.py"}
     G1 -- "FAIL" --> REJ1(["Reject<br/>report conflict to student"])
     G1 -- "PASS" --> G2{"GATE 2<br/>compliance_agent.py<br/>10 Constitution checks"}
@@ -186,7 +188,7 @@ flowchart TD
 |-----------|------|----------------|
 | **Teaching Agent** | `teaching_agent.py` | Level-adapted concept explanation; adapts to grade + learning_style; vault-first with web fallback at threshold 0.6; returns `raw_content[]` (full unprocessed vault/web chunks) for LLM elaboration alongside `explanation`, `examples`, `key_points`, `exam_tips` |
 | **Practice Agent** | `practice_agent.py` | Generates 5 question types (MCQ, short_answer, long_answer, fill_blank, true_false); board-aware marking scheme |
-| **Marking Scheme Store** | `marking_scheme_store.py` | Single source of truth for marking rules across CBSE, ICSE, IB, Cambridge, Generic |
+| **Marking Scheme Store** | `marking_scheme_store.py` | Single source of truth for marking rules across CBSE, ICSE, IB, Cambridge, State, Generic |
 
 #### Write Gates
 
@@ -200,7 +202,7 @@ flowchart TD
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| **Note Writer Agent** | `note_writer_agent.py` | Only vault write endpoint; validates both gates internally; routes by note_type — `concept` + `learning-module` → `04 - Concepts`, `practice` → `05 - Practice`, `revision-plan` + `exam` → `06 - Plans` |
+| **Note Writer Agent** | `note_writer_agent.py` | Only vault write endpoint; validates both gates internally; routes by note_type — `concept` + `learning-module` → `04 - Concepts`, `practice` + `review` → `05 - Practice`, `revision-plan` + `exam` → `06 - Plans` |
 | **Create Note** | `create_note.py` + `create_note_stdin.ps1` | Atomic file creation via PowerShell |
 | **Vault Indexer** | `index_vault.py` | Rebuilds FAISS index from all vault markdown; runs post-write |
 
@@ -218,7 +220,7 @@ flowchart TD
 | Component | File | Responsibility |
 |-----------|------|----------------|
 | **Path Constants** | `paths.py` | Single source of truth for all file system paths; derived from `__file__` location — vault-portable |
-| **Generate Presentation** | `generate_presentation.py` | Renders vault markdown notes as HTML slide presentations |
+| **Generate Presentation** | `generate_presentation.py` + `generate_presentation_stdin.ps1` | Renders vault markdown notes as self-contained offline HTML slide decks |
 | **Archive and Reset** | `archive_and_reset.py` | Batch-archives content folders to `99 - Archive/`; re-indexes |
 
 ---
@@ -234,16 +236,16 @@ flowchart TD
     IN(["Input: query string"])
 
     subgraph SIGNALS["Signal Matching"]
-        NS["NOTE_SIGNALS<br/>weight 0.9-1.0<br/>→ note_creation"]
-        VS["VAULT_SIGNALS<br/>weight 0.7-0.9<br/>→ vault_only"]
-        RS["RESEARCH_SIGNALS<br/>weight 0.6-0.8<br/>→ research"]
-        LS["LOOKUP_SIGNALS<br/>weight 0.5-0.7<br/>→ simple_lookup"]
+        NS["NOTE_CREATION_SIGNALS<br/>weight 0.7-1.0<br/>→ note_creation"]
+        VS["VAULT_ONLY_SIGNALS<br/>weight 0.7-1.0<br/>→ vault_only"]
+        MS["MULTI_TOPIC_SIGNALS<br/>weight 0.5-1.0<br/>→ multi_topic_research"]
+        RS["VERIFIED_RESEARCH_SIGNALS<br/>weight 0.6-1.0<br/>→ verified_research"]
     end
 
     IN --> SIGNALS
     SIGNALS --> CONF["Confidence = sum of matched weights / max_possible"]
     CONF --> ESC{"confidence below 0.7?"}
-    ESC -- "yes" --> ESCL["escalate one tier"]
+    ESC -- "yes" --> ESCL["escalate one tier<br/>simple_lookup → vault_only →<br/>multi_topic_research →<br/>verified_research → note_creation"]
     ESC -- "no" --> OUT
     ESCL --> OUT(["Output: task_type<br/>confidence · escalated · signals_matched"])
 ```
@@ -258,7 +260,7 @@ flowchart TD
     VFC -- "fail" --> E2(["exit 2 — Gate 1 not passed"])
     VFC -- "ok" --> VCC["validate_compliance<br/>status must be PASS"]
     VCC -- "fail" --> E3(["exit 3 — Gate 2 not passed"])
-    VCC -- "ok" --> RF["resolve_folder<br/>concept + learning-module→04<br/>practice→05 · revision-plan→06"]
+    VCC -- "ok" --> RF["resolve_folder<br/>concept + learning-module→04<br/>practice + review→05<br/>revision-plan + exam→06"]
     RF --> WN["write_note<br/>create_note_stdin.ps1"]
     WN -- "fail" --> E4(["exit 4 — note write failed"])
     WN -- "ok" --> IDX["index_vault.py<br/>rebuild FAISS index"]
@@ -293,7 +295,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     PROF(["Student Profile"])
-    PROF --> GRADE["grade → _GRADE_LEVEL_MAP<br/>junior / senior / advanced"]
+    PROF --> GRADE["grade → _GRADE_LEVEL_MAP<br/>beginner / intermediate / advanced"]
     GRADE --> INST["_LEVEL_INSTRUCTIONS<br/>system_prompt suffix"]
 
     PROF --> VS["Vault search<br/>threshold 0.6"]
@@ -338,7 +340,7 @@ sequenceDiagram
     VS-->>VS: FAISS top score 0.72 (above 0.6 threshold)
     VS->>CT: 5 vault findings from 04 - Concepts/
     CT->>TA: vault_content + student profile
-    TA-->>TA: Grade 11 → senior level, CBSE board
+    TA-->>TA: Grade 11 → intermediate level, CBSE board
     TA->>LLM: explanation + examples + key_points + raw_content[]
     LLM-->>LLM: Master Elaborator activates on raw_content[]
     LLM-->>LLM: Produces Learning Module:<br/>Hook · Concept Map · Layered Explanation<br/>Examples · Analogy · Key Points · Exam Corner<br/>Self-Check · Further Questions
@@ -374,7 +376,7 @@ sequenceDiagram
     LLM-->>LLM: Master Elaborator produces Learning Module<br/>type: learning-module · [[wikilinks]] · [Title](URL) sources
     LLM->>FC: Learning Module content + claims
     Note over FC: GATE 1
-    FC-->>FC: contradiction_check k=8 chunks
+    FC-->>FC: contradiction_check k=6 chunks
     FC-->>FC: verdict CLEAR — pass true
     FC->>CA: fact_check_result
     Note over CA: GATE 2
@@ -483,8 +485,8 @@ flowchart TD
 
     S -- "query" --> CT
     CT -- "simple_lookup / vault_only" --> VS["vault_search_agent.py"]
-    CT -- "research" --> WS["vault_search_agent.py<br/>+ web_search_agent.py"]
-    CT -- "note_creation" --> NG["teach_concept<br/>OR practice_agent.py"]
+    CT -- "multi_topic_research / verified_research" --> WS["vault_search_agent.py<br/>+ web_search_agent.py"]
+    CT -- "note_creation" --> NG["teaching_agent.py<br/>OR practice_agent.py"]
 
     VS & WS --> RO{"read-only<br/>response?"}
     RO -- "yes" --> ELAB1["LLM Master Elaborator<br/>raw_content[] → Learning Module"]
@@ -501,4 +503,4 @@ flowchart TD
 
 ---
 
-*Generated by Copilot — Study Agent System, 2026-03-22*
+*Generated by Copilot — Study Agent System, 2026-11-18*
